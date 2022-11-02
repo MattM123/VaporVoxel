@@ -11,14 +11,11 @@ import javafx.scene.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
-//import javafx.scene.robot.Robot;
-import javafx.scene.shape.Box;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -49,7 +46,6 @@ public class MainApplication extends Application {
     private final Affine backwardAffine = new Affine();
     private final Affine leftAffine = new Affine();
     private final Affine rightAffine = new Affine();
-
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("view.fxml"));
@@ -61,12 +57,14 @@ public class MainApplication extends Application {
         stage.setScene(scene);
         stage.show();
 
-        Box box = new Box(5, 5, 5);
-        Box box1 = new Box(5, 5, 5);
-        Box box2 = new Box(5, 5, 5);
-        Box box3 = new Box(5, 5, 5);
-        Box box4 = new Box(5, 5, 5);
-        Box box5 = new Box(5, 5, 5);
+        Chunk chunk = new Chunk();
+        Cube box = new Cube();
+        Cube box1 = new Cube();
+        Cube box2 = new Cube();
+        Cube box3 = new Cube();
+        Cube box4 = new Cube();
+        Cube box5 = new Cube();
+
         box.setMaterial(new PhongMaterial(Color.BLUE));
         box1.setMaterial(new PhongMaterial(Color.GREEN));
         box2.setMaterial(new PhongMaterial(Color.YELLOW));
@@ -81,8 +79,8 @@ public class MainApplication extends Application {
         box4.setTranslateY(40);
         box5.setTranslateY(-40);
 
-
-        world.getChildren().addAll(box, box1, box2, box3, box4, box5);
+        chunk.addToWorld(world);
+        //world.getChildren().addAll(box, box1, box2, box3, box4, box5);
 
         camera.setFarClip(2000);
         camera.setNearClip(1);
