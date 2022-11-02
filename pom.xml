@@ -68,6 +68,13 @@
             <version>0.4.0</version>
         </dependency>
         <dependency>
+            <groupId>org.fxyz3d</groupId>
+            <artifactId>fxyz3d</artifactId>
+            <version>0.5.4</version>
+        </dependency>
+        <!-- Thanks for using https://jar-download.com -->
+
+        <dependency>
             <groupId>eu.hansolo</groupId>
             <artifactId>tilesfx</artifactId>
             <version>17.1.9</version>
@@ -123,7 +130,7 @@
                         <!-- Default configuration for running with: mvn clean javafx:run -->
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>com.marcuzzo.vaporvoxel/com.marcuzzo.vaporvoxel.HelloApplication</mainClass>
+                            <mainClass>com.marcuzzo.vaporvoxel/com.marcuzzo.vaporvoxel.MainApplication</mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
                             <jlinkImageName>app</jlinkImageName>

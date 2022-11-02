@@ -8,6 +8,7 @@ module com.marcuzzo.vaporvoxel {
     requires org.kordamp.bootstrapfx.core;
     requires com.almasb.fxgl.all;
     requires java.desktop;
+    requires org.fxyz3d.core;
 
     opens com.marcuzzo.vaporvoxel to javafx.fxml;
     exports com.marcuzzo.vaporvoxel;
