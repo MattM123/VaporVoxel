@@ -11,30 +11,31 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Chunk extends Region {
+    private Point3D location;
     private final int CHUNK_BOUNDS = 32;
     private final Cube[][][] chunk = new Cube[CHUNK_BOUNDS][CHUNK_BOUNDS][CHUNK_BOUNDS];
     private ScatterMesh mesh;
     public Chunk() {
     }
 
-    public Chunk initialize() {
+    public Chunk initialize(int x, int y, int z) {
         int vFlag = 0;
-        for (int x = 0; x < chunk.length; x++) {
-            for (int y = 0; y < chunk.length; y++) {
-                for (int z = 0; z < chunk.length; z++) {
+        location = new Point3D(x, y, z);
+        for (int i = 0; i < chunk.length; i++) {
+            for (int j = 0; j < chunk.length; j++) {
+                for (int k = 0; k < chunk.length; k++) {
                     Cube c = new Cube();
                     vFlag++;
                     if (vFlag > CHUNK_BOUNDS)
                         vFlag = 1;
                     c.setTranslateZ(c.getTranslateZ() + vFlag);
-                    c.resizeRelocate(x, y, c.getBoundsInLocal().getWidth(), c.getBoundsInLocal().getHeight());
-                    chunk[x][y][z] = c;
+                    c.resizeRelocate(location.getX() + i, location.getY() + j, c.getBoundsInLocal().getWidth(), c.getBoundsInLocal().getHeight());
+                    chunk[i][j][k] = c;
                 }
             }
         }
         return this;
     }
-
     /**
      * Iterates through a Chunk of Cubes and adds them to a Group world
      * @param world Game world where objects are spawned
@@ -42,11 +43,11 @@ public class Chunk extends Region {
     public void addToWorld(Group world) {
         int counter = 0;
         ArrayList<Point3D> cubes = new ArrayList<>();
-        for (Cube[][] value : chunk) {
+        for (int x = 0; x < chunk.length; x++) {
             for (int y = 0; y < chunk.length; y++) {
                 for (int z = 0; z < chunk.length; z++) {
-                    Cube c = value[y][z];
-                    if (value[y][z].isActive()) {
+                    Cube c = chunk[x][y][z];
+                    if (c.isActive()) {
                         cubes.add(c.getUpperLeftVertex());
                         counter++;
                     }
@@ -69,10 +70,10 @@ public class Chunk extends Region {
      */
     public void removeChunk(Group world) {
         ArrayList<Cube> cubes = new ArrayList<>();
-        for (Cube[][] value : chunk) {
+        for (int x = 0; x < chunk.length ; x++) {
             for (int y = 0; y < chunk.length; y++) {
-                for (int z = 0; z < chunk.length; z++) {
-                    cubes.add(value[y][z]);
+                for (int z = 0; z <  chunk.length; z++) {
+                    cubes.add(chunk[x][y][z]);
                     world.getChildren().remove(mesh);
                 }
             }
@@ -103,35 +104,35 @@ public class Chunk extends Region {
                         c0 = chunk[x + 1][y][z];
                         exists[0] = true;
                     } catch (IndexOutOfBoundsException | NullPointerException e) {
-                        System.out.println(e.getMessage());
+                        c.setActive(true);
                     } try {
                         c1 = chunk[x - 1][y][z];
                         exists[1] = true;
                     } catch (IndexOutOfBoundsException | NullPointerException e) {
-                        System.out.println(e.getMessage());
+                        c.setActive(true);
                     } try {
                         c2 = chunk[x][y + 1][z];
                         exists[2] = true;
                     } catch (IndexOutOfBoundsException | NullPointerException e) {
-                        System.out.println(e.getMessage());
+                        c.setActive(true);
                     } try {
                         c3 = chunk[x][y - 1][z];
                         exists[3] = true;
                     } catch (IndexOutOfBoundsException | NullPointerException e) {
-                        System.out.println(e.getMessage());
+                        c.setActive(true);
                     } try {
                         c4 = chunk[x][y][z + 1];
                         exists[4] = true;
                     } catch (IndexOutOfBoundsException | NullPointerException e) {
-                        System.out.println(e.getMessage());
+                        c.setActive(true);
                     } try {
                         c5 = chunk[x][y][z - 1];
                         exists[5] = true;
                     } catch (IndexOutOfBoundsException | NullPointerException e) {
-                        System.out.println(e.getMessage());
+                        c.setActive(true);
                     }
                     Cube[] cubes = {c0, c1, c2, c3, c4, c5};
-                    System.out.println(Arrays.toString(cubes));
+                    //System.out.println(Arrays.toString(cubes));
                     for (boolean exist : exists) {
                         if (!exist) {
                             c.setActive(true);

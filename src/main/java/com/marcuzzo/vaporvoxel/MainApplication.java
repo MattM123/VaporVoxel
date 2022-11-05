@@ -58,14 +58,21 @@ public class MainApplication extends Application {
         stage.setScene(scene);
         stage.show();
         world.getChildren().add(new AmbientLight(Color.WHITE));
-        Chunk chunk = new Chunk().initialize();
+        Chunk chunk = new Chunk().initialize(0,0,0);
+        Chunk chunk1 = new Chunk().initialize(32,0,32);
 
         camera.setFarClip(2000);
         camera.setNearClip(1);
         scene.setCamera(camera);
         AtomicBoolean pressed = new AtomicBoolean(false);
 
-        Thread t = new Thread(() -> Platform.runLater(() -> chunk.updateChunk(world)));
+        Thread t = new Thread(() -> Platform.runLater(() -> {
+            chunk.updateChunk(world);
+            chunk1.updateChunk(world);
+        }));
+
+
+
         t.start();
 
 
