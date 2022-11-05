@@ -9,6 +9,7 @@ module com.marcuzzo.vaporvoxel {
     requires com.almasb.fxgl.all;
     requires java.desktop;
     requires org.fxyz3d.core;
+    requires annotations;
 
     opens com.marcuzzo.vaporvoxel to javafx.fxml;
     exports com.marcuzzo.vaporvoxel;

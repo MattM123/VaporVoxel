@@ -1,49 +1,44 @@
 package com.marcuzzo.vaporvoxel;
 
-import javafx.scene.paint.Color;
-import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
+import org.fxyz3d.geometry.Point3D;
 
 public class Cube extends Box {
     private boolean isActive;
-    private final BlockType type;
-
+    private BlockType type;
     public Cube() {
         super();
-        type = BlockType.DEFAULT;
-        setMaterial(new PhongMaterial(Color.AQUA));
         isActive = true;
-
+        setType(BlockType.DEFAULT);
     }
 
     public boolean isActive(){
         return isActive;
     }
-
-    public void setActive(boolean b) {
-        isActive = b;
-    }
-
+    public void setActive(boolean b) { isActive = b; }
     public BlockType getType() {
         return type;
     }
-
-    public double[] getLowerRightVertex() {
-        return new double[] {this.getBoundsInParent().getMaxX(), this.getBoundsInParent().getMaxY(),
-                this.getBoundsInParent().getMaxZ()};
+    public void setType(BlockType type) {
+        this.type = type;
     }
 
-    public double[] getUpperLeftVertex() {
-        return new double[] {this.getBoundsInParent().getMinX(), this.getBoundsInParent().getMinY(),
-                this.getBoundsInParent().getMinZ()};
+/*
+    public Point3D getLowerRightVertex() {
+       return new Point3D(getBoundsInParent().getMaxX(), getBoundsInParent().getMaxY(),
+                getBoundsInParent().getMaxZ());
     }
 
-    @Override
-    public String toString() {
-        return "Cube Location: (" + getUpperLeftVertex()[0] + "," +  getUpperLeftVertex()[1] + "," + getUpperLeftVertex()[2] + ") ("
-                + getLowerRightVertex()[0] + "," + getLowerRightVertex()[1] + "," + getLowerRightVertex()[2] + ")";
+ */
+    public Point3D getUpperLeftVertex() {
+        return new Point3D(getBoundsInParent().getMinX(), getBoundsInParent().getMinY(),
+                getBoundsInParent().getMinZ());
     }
 
 
-
+//   @Override
+  //  public String toString() {
+  //      return "Upper Left Vertex: (x-" + getUpperLeftVertex().getX() + ",y-" +  getUpperLeftVertex().getY() + ",z-" + getUpperLeftVertex().getZ() + ") " +
+ //               "Lower Right Vertex: (x-" + getLowerRightVertex().getX() + ",y-" + getLowerRightVertex().getY() + ",z-" + getLowerRightVertex().getZ() + ") ";
+   // }
 }

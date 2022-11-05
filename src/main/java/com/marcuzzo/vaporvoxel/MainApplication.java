@@ -10,12 +10,12 @@ import javafx.geometry.Point3D;
 import javafx.scene.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.PhongMaterial;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 import javafx.stage.Stage;
 import javafx.util.Callback;
+
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -56,36 +56,16 @@ public class MainApplication extends Application {
         stage.setTitle("VaporVoxel");
         stage.setScene(scene);
         stage.show();
-
-        Chunk chunk = new Chunk();
-        Cube box = new Cube();
-        Cube box1 = new Cube();
-        Cube box2 = new Cube();
-        Cube box3 = new Cube();
-        Cube box4 = new Cube();
-        Cube box5 = new Cube();
-
-        box.setMaterial(new PhongMaterial(Color.BLUE));
-        box1.setMaterial(new PhongMaterial(Color.GREEN));
-        box2.setMaterial(new PhongMaterial(Color.YELLOW));
-        box3.setMaterial(new PhongMaterial(Color.RED));
-        box4.setMaterial(new PhongMaterial(Color.LIME));
-        box5.setMaterial(new PhongMaterial(Color.BLACK));
-
-        box.setTranslateZ(40);
-        box1.setTranslateZ(-40);
-        box2.setTranslateX(40);
-        box3.setTranslateX(-40);
-        box4.setTranslateY(40);
-        box5.setTranslateY(-40);
-
-        chunk.addToWorld(world);
-        //world.getChildren().addAll(box, box1, box2, box3, box4, box5);
+        world.getChildren().add(new AmbientLight(Color.WHITE));
+        Chunk chunk = new Chunk().initialize();
 
         camera.setFarClip(2000);
         camera.setNearClip(1);
         scene.setCamera(camera);
         AtomicBoolean pressed = new AtomicBoolean(false);
+
+        Thread updateThread = new Thread(() -> chunk.updateChunk(world));
+        updateThread.start();
 
         scene.setOnMouseEntered((MouseEvent event) -> {
             pressed.set(true);
@@ -95,6 +75,7 @@ public class MainApplication extends Application {
 
        // Robot mouseMover = new Robot();
         scene.setOnMouseMoved((MouseEvent event) -> {
+        //    chunk.updateChunk(world);
             if (pressed.get() && !pause) {
                 dx = event.getSceneX() - newX;
                 dy = event.getSceneY() - newY;
