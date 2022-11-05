@@ -2,6 +2,7 @@ package com.marcuzzo.vaporvoxel;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -64,8 +65,9 @@ public class MainApplication extends Application {
         scene.setCamera(camera);
         AtomicBoolean pressed = new AtomicBoolean(false);
 
-        Thread updateThread = new Thread(() -> chunk.updateChunk(world));
-        updateThread.start();
+        Thread t = new Thread(() -> Platform.runLater(() -> chunk.updateChunk(world)));
+        t.start();
+
 
         scene.setOnMouseEntered((MouseEvent event) -> {
             pressed.set(true);
