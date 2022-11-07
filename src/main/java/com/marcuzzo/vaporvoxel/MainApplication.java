@@ -11,6 +11,8 @@ import javafx.geometry.Point3D;
 import javafx.scene.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.Box;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
@@ -18,6 +20,9 @@ import javafx.stage.Stage;
 import javafx.util.Callback;
 
 import java.io.IOException;
+import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainApplication extends Application {
@@ -58,22 +63,27 @@ public class MainApplication extends Application {
         stage.setScene(scene);
         stage.show();
         world.getChildren().add(new AmbientLight(Color.WHITE));
-        ChunkManager manager = new ChunkManager();
+        ChunkManager manager = new ChunkManager(camera);
 
+        Box b = new Box(1, 1, 1);
+        b.setMaterial(new PhongMaterial(Color.GREEN));
+
+        world.getChildren().addAll(b);
+
+        Rotate camRot = new Rotate(270, Rotate.X_AXIS);
         camera.setFarClip(2000);
         camera.setNearClip(1);
+        camera.getTransforms().add(camRot);
         scene.setCamera(camera);
         AtomicBoolean pressed = new AtomicBoolean(false);
 
-        Thread t = new Thread(() -> Platform.runLater(() -> {
-            for (Chunk chunk : manager) {
-                chunk.updateChunk(world);
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                Platform.runLater(() -> manager.updateRender(world));
             }
-        }));
-
-
-
-        t.start();
+        };
+        Executors.newScheduledThreadPool(1).scheduleAtFixedRate(task, 0, 500, TimeUnit.MILLISECONDS);
 
 
         scene.setOnMouseEntered((MouseEvent event) -> {
@@ -84,7 +94,6 @@ public class MainApplication extends Application {
 
        // Robot mouseMover = new Robot();
         scene.setOnMouseMoved((MouseEvent event) -> {
-        //    chunk.updateChunk(world);
             if (pressed.get() && !pause) {
                 dx = event.getSceneX() - newX;
                 dy = event.getSceneY() - newY;

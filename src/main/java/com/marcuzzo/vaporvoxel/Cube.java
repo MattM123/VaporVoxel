@@ -8,7 +8,7 @@ public class Cube extends Box {
     private BlockType type;
     public Cube() {
         super();
-        isActive = true;
+        isActive = false;
         setType(BlockType.DEFAULT);
     }
 
@@ -23,22 +23,14 @@ public class Cube extends Box {
         this.type = type;
     }
 
-/*
-    public Point3D getLowerRightVertex() {
-       return new Point3D(getBoundsInParent().getMaxX(), getBoundsInParent().getMaxY(),
-                getBoundsInParent().getMaxZ());
-    }
-
- */
     public Point3D getUpperLeftVertex() {
         return new Point3D(getBoundsInParent().getMinX(), getBoundsInParent().getMinY(),
                 getBoundsInParent().getMinZ());
     }
 
-
-//   @Override
-  //  public String toString() {
-  //      return "Upper Left Vertex: (x-" + getUpperLeftVertex().getX() + ",y-" +  getUpperLeftVertex().getY() + ",z-" + getUpperLeftVertex().getZ() + ") " +
- //               "Lower Right Vertex: (x-" + getLowerRightVertex().getX() + ",y-" + getLowerRightVertex().getY() + ",z-" + getLowerRightVertex().getZ() + ") ";
-   // }
+   @Override
+    public String toString() {
+        return "Upper Left Vertex: (x-" + getUpperLeftVertex().getX() + ",y-"
+                +  getUpperLeftVertex().getY() + ",z-" + getUpperLeftVertex().getZ() + ") ";
+    }
 }
