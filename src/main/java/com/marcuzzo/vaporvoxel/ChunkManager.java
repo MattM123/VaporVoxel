@@ -1,22 +1,26 @@
 package com.marcuzzo.vaporvoxel;
 
 import javafx.scene.Group;
-import javafx.scene.PerspectiveCamera;
 import org.fxyz3d.geometry.Point3D;
+
 import java.util.Vector;
 
 public class ChunkManager extends Vector<Chunk> {
-    private final PerspectiveCamera player;
-    private int RENDER_DISTANCE = 2;
+    private final Player player;
+    private final int RENDER_DISTANCE = 2;
 
-    public ChunkManager(PerspectiveCamera player) {
+    public ChunkManager(Player player, Group world) {
         this.player = player;
+        player.setManager(this);
         add(new Chunk().initialize(0, 0, 0));
+        updateRender(world);
     }
+
     public Chunk getChunkWithPlayer() {
         Chunk c = null;
         for (Chunk chunk : this) {
-            if (player.getBoundsInParent().intersects(chunk.getBoundsInParent())) {
+            if (Math.abs(player.getBoundsInParent().getCenterX() - chunk.getBoundsInParent().getCenterX()) <= chunk.CHUNK_BOUNDS &&
+                    Math.abs(player.getBoundsInParent().getCenterY() - chunk.getBoundsInParent().getCenterY()) <= chunk.CHUNK_BOUNDS) {
                 c = chunk;
                 break;
             }
@@ -52,22 +56,20 @@ public class ChunkManager extends Vector<Chunk> {
     public void updateRender(Group world) {
         //Spawn chunk rendering and de-rendering
         if (getChunkWithPlayer() != null) {
-            int CHUNK_BOUNDS = 16;
-            ChunkRenderingAlgorithm render = new ChunkRenderingAlgorithm(RENDER_DISTANCE, CHUNK_BOUNDS, getChunkWithPlayer(), this);
+            ChunkRendering render = new ChunkRendering(RENDER_DISTANCE, getChunkWithPlayer().CHUNK_BOUNDS,
+                    getChunkWithPlayer(), this);
             if (!world.getChildren().contains(get(0)))
                 get(0).updateChunk(world);
             if (world.getChildren().contains(get(0)) && !render.getChunksToRender().contains(get(0))) {
                 get(0).removeChunk(world);
             }
 
-        //Surrounding chunk rendering and de-rendering
+            //Add chunks to render to world chunk list
+            addAll(render.getChunksToRender());
+
+            //Surrounding chunk rendering and de-rendering
             for (Chunk chunk : render.getChunksToRender()) {
-                if (getChunkWithLocation(chunk.getLocation()) != null)
-                    chunk.updateChunk(world);
-                else {
-                    add(chunk);
-                    chunk.addToWorld(world);
-                }
+                chunk.updateChunk(world);
             }
             for (Chunk chunk : this) {
                 if (!render.getChunksToRender().contains(chunk)) {

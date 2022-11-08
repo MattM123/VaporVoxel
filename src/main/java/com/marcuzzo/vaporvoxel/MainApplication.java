@@ -8,7 +8,10 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Point3D;
-import javafx.scene.*;
+import javafx.scene.AmbientLight;
+import javafx.scene.Group;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
@@ -20,9 +23,6 @@ import javafx.stage.Stage;
 import javafx.util.Callback;
 
 import java.io.IOException;
-import java.util.TimerTask;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainApplication extends Application {
@@ -35,11 +35,11 @@ public class MainApplication extends Application {
     /**
      * How much to increment or decrement the camera rotation every time the mouse is moved
      */
-    private final double mouseSensitivity = 1.5;
+    private final double mouseSensitivity = 1.2;
     /**
      * Controls camera move speed
      */
-    private final double moveSpeed = 0.5;
+    private final double moveSpeed = 0.2;
     private final BooleanProperty w = new SimpleBooleanProperty(false);
     private final BooleanProperty a = new SimpleBooleanProperty(false);
     private final BooleanProperty s = new SimpleBooleanProperty(false);
@@ -47,7 +47,7 @@ public class MainApplication extends Application {
     private final BooleanBinding anyPressed = w.or(a).or(s).or(d);
     private boolean pause = false;
     private Rotate rotation = new Rotate(0, Rotate.X_AXIS);
-    private final PerspectiveCamera camera = new PerspectiveCamera(true);
+    private Player camera;
     private final Affine forwardAffine = new Affine();
     private final Affine backwardAffine = new Affine();
     private final Affine leftAffine = new Affine();
@@ -63,28 +63,24 @@ public class MainApplication extends Application {
         stage.setScene(scene);
         stage.show();
         world.getChildren().add(new AmbientLight(Color.WHITE));
-        ChunkManager manager = new ChunkManager(camera);
+        camera = new Player(true, world);
+        ChunkManager manager = new ChunkManager(camera, world);
+        camera.setManager(manager);
 
         Box b = new Box(1, 1, 1);
         b.setMaterial(new PhongMaterial(Color.GREEN));
-
         world.getChildren().addAll(b);
 
-        Rotate camRot = new Rotate(270, Rotate.X_AXIS);
+
+        Rotate camRot = new Rotate(-90, Rotate.X_AXIS);
         camera.setFarClip(2000);
         camera.setNearClip(1);
         camera.getTransforms().add(camRot);
         scene.setCamera(camera);
         AtomicBoolean pressed = new AtomicBoolean(false);
 
-        TimerTask task = new TimerTask() {
-            @Override
-            public void run() {
-                Platform.runLater(() -> manager.updateRender(world));
-            }
-        };
-        Executors.newScheduledThreadPool(1).scheduleAtFixedRate(task, 0, 500, TimeUnit.MILLISECONDS);
-
+        Thread t = new Thread(() -> Platform.runLater(() -> manager.updateRender(world)));
+        t.start();
 
         scene.setOnMouseEntered((MouseEvent event) -> {
             pressed.set(true);
@@ -92,7 +88,6 @@ public class MainApplication extends Application {
             newY = event.getSceneY();
         });
 
-       // Robot mouseMover = new Robot();
         scene.setOnMouseMoved((MouseEvent event) -> {
             if (pressed.get() && !pause) {
                 dx = event.getSceneX() - newX;
@@ -150,6 +145,7 @@ public class MainApplication extends Application {
         AnimationTimer timer = new AnimationTimer() {
             @Override
             public void handle(long timestamp) {
+                camera.checkChunk();
                 if (!pause) {
                     if (w.get()) {
                         camera.getTransforms().add(forwardAffine);
@@ -183,7 +179,7 @@ public class MainApplication extends Application {
      *Movement
     ==============================================*/
     private void moveForward() {
-        forwardAffine.setTx(getPosition().getX() + moveSpeed * getN().getX());
+      //  forwardAffine.setTx(getPosition().getX() + moveSpeed * getN().getX());
         forwardAffine.setTy(getPosition().getY() + moveSpeed * getN().getY());
         forwardAffine.setTz(getPosition().getZ() + moveSpeed * getN().getZ());
     }
@@ -191,17 +187,17 @@ public class MainApplication extends Application {
     private void strafeLeft() {
         leftAffine.setTx(getPosition().getX() + moveSpeed * -getU().getX());
         leftAffine.setTy(getPosition().getY() + moveSpeed * -getU().getY());
-        leftAffine.setTz(getPosition().getZ() + moveSpeed * -getU().getZ());
+     //   leftAffine.setTz(getPosition().getZ() + moveSpeed * -getU().getZ());
     }
 
     private void strafeRight() {
         rightAffine.setTx(getPosition().getX() + moveSpeed * getU().getX());
         rightAffine.setTy(getPosition().getY() + moveSpeed * getU().getY());
-        rightAffine.setTz(getPosition().getZ() + moveSpeed * getU().getZ());
+     //   rightAffine.setTz(getPosition().getZ() + moveSpeed * getU().getZ());
     }
 
     private void moveBack() {
-        backwardAffine.setTx(getPosition().getX() + moveSpeed * -getN().getX());
+      //  backwardAffine.setTx(getPosition().getX() + moveSpeed * -getN().getX());
         backwardAffine.setTy(getPosition().getY() + moveSpeed * -getN().getY());
         backwardAffine.setTz(getPosition().getZ() + moveSpeed * -getN().getZ());
     }

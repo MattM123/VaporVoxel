@@ -5,7 +5,7 @@ import org.fxyz3d.geometry.Point3D;
 import java.util.ArrayList;
 
 
-public class ChunkRenderingAlgorithm {
+public class ChunkRendering {
     private final int renderDistance;
     private final int bounds;
     private final Chunk playerChunk;
@@ -20,7 +20,7 @@ public class ChunkRenderingAlgorithm {
      * @param manager The chunk manager that is responsible for rendering,
      *                de-rendering and updating chunks
      */
-    public ChunkRenderingAlgorithm(int renderDistance, int bounds, Chunk playerChunk, ChunkManager manager) {
+    public ChunkRendering(int renderDistance, int bounds, Chunk playerChunk, ChunkManager manager) {
         this.renderDistance = renderDistance;
         this.bounds = bounds;
         this.playerChunk = playerChunk;
@@ -76,10 +76,7 @@ public class ChunkRenderingAlgorithm {
         return chunks;
     }
     /**
-     * When determining the chunks to render around the player, first a starting chunk is found. This is
-     * the upper left most chunk within render distance based around the chunk the player is currently
-     * standing in. From there it iterates in a left-to-right, up-to-down
-     * fashion and adds the chunks that should be rendered to the output list.
+     * Returns a list of chunks that should be rendered around a player based on a render distance value
      * @return The list of chunks that should be rendered
      */
     public ArrayList<Chunk> getChunksToRender() {

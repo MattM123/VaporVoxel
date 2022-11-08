@@ -4,7 +4,6 @@ import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.CullFace;
-import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.MeshView;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.shapes.primitives.ScatterMesh;
@@ -14,8 +13,8 @@ import java.util.ArrayList;
 
 public class Chunk extends MeshView {
     private Point3D location;
-    private final int CHUNK_BOUNDS = 16;
-    private final int CHUNK_HEIGHT = 16;
+    public final int CHUNK_BOUNDS = 16;
+    public final int CHUNK_HEIGHT = 64;
     private final Cube[][][] chunk = new Cube[CHUNK_BOUNDS][CHUNK_BOUNDS][CHUNK_HEIGHT];
 
     public Chunk() {
@@ -61,7 +60,6 @@ public class Chunk extends MeshView {
             mesh.setMarker(MarkerFactory.Marker.CUBE);
             mesh.setId("scatter");
             setMesh(mesh.getMeshFromId(mesh.getId()).getMesh());
-            setDrawMode(DrawMode.LINE);
             setCullFace(CullFace.NONE);
             setMaterial(new PhongMaterial(Color.BLUE));
             world.getChildren().add(this);
@@ -97,7 +95,7 @@ public class Chunk extends MeshView {
                 for (int z = 0; z < CHUNK_HEIGHT; z++) {
 
                     Cube c = cubes[y][z];
-                    if (z == CHUNK_HEIGHT / 2) {
+                    if (z ==  CHUNK_HEIGHT / 2) {
                         c.setActive(true);
                     }
 
