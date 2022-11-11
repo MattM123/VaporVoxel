@@ -23,21 +23,23 @@ import javafx.stage.Stage;
 import javafx.util.Callback;
 
 import java.io.IOException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainApplication extends Application {
     private Group world;
+    private Rotate rotation = new Rotate(0, Rotate.X_AXIS);
+
+    /**
+     * Controls mouse movement and speed/sensitivity
+     */
     private double newX;
     private double newY;
     private double dx;
     private double dy;
-
-    /**
-     * How much to increment or decrement the camera rotation every time the mouse is moved
-     */
     private final double mouseSensitivity = 1.2;
     /**
-     * Controls camera move speed
+     * Controls camera movement/sensitivity
      */
     private final double moveSpeed = 0.2;
     private final BooleanProperty w = new SimpleBooleanProperty(false);
@@ -46,12 +48,13 @@ public class MainApplication extends Application {
     private final BooleanProperty d = new SimpleBooleanProperty(false);
     private final BooleanBinding anyPressed = w.or(a).or(s).or(d);
     private boolean pause = false;
-    private Rotate rotation = new Rotate(0, Rotate.X_AXIS);
     private Player camera;
     private final Affine forwardAffine = new Affine();
     private final Affine backwardAffine = new Affine();
     private final Affine leftAffine = new Affine();
     private final Affine rightAffine = new Affine();
+    public static ExecutorService executor = Executors.newFixedThreadPool(4, Thread::new);
+
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("view.fxml"));
@@ -78,9 +81,7 @@ public class MainApplication extends Application {
         camera.getTransforms().add(camRot);
         scene.setCamera(camera);
         AtomicBoolean pressed = new AtomicBoolean(false);
-
-        Thread t = new Thread(() -> Platform.runLater(() -> manager.updateRender(world)));
-        t.start();
+        manager.updateRender(world);
 
         scene.setOnMouseEntered((MouseEvent event) -> {
             pressed.set(true);
@@ -122,6 +123,8 @@ public class MainApplication extends Application {
                 case W -> w.set(true);
                 case S -> s.set(true);
                 case ESCAPE -> pause = !pause;
+                default -> {
+                }
             }
         });
 
@@ -141,11 +144,11 @@ public class MainApplication extends Application {
          and false on key released events. This timer and boolean binding are responsible for
          doing camera movements at the same time for concurrent key presses.
          */
-
         AnimationTimer timer = new AnimationTimer() {
             @Override
             public void handle(long timestamp) {
-                camera.checkChunk();
+                executor.execute(() -> Platform.runLater(() -> camera.checkChunk()));
+
                 if (!pause) {
                     if (w.get()) {
                         camera.getTransforms().add(forwardAffine);
@@ -179,7 +182,7 @@ public class MainApplication extends Application {
      *Movement
     ==============================================*/
     private void moveForward() {
-      //  forwardAffine.setTx(getPosition().getX() + moveSpeed * getN().getX());
+        forwardAffine.setTx(getPosition().getX() + moveSpeed * getN().getX());
         forwardAffine.setTy(getPosition().getY() + moveSpeed * getN().getY());
         forwardAffine.setTz(getPosition().getZ() + moveSpeed * getN().getZ());
     }
@@ -187,17 +190,17 @@ public class MainApplication extends Application {
     private void strafeLeft() {
         leftAffine.setTx(getPosition().getX() + moveSpeed * -getU().getX());
         leftAffine.setTy(getPosition().getY() + moveSpeed * -getU().getY());
-     //   leftAffine.setTz(getPosition().getZ() + moveSpeed * -getU().getZ());
+        leftAffine.setTz(getPosition().getZ() + moveSpeed * -getU().getZ());
     }
 
     private void strafeRight() {
         rightAffine.setTx(getPosition().getX() + moveSpeed * getU().getX());
         rightAffine.setTy(getPosition().getY() + moveSpeed * getU().getY());
-     //   rightAffine.setTz(getPosition().getZ() + moveSpeed * getU().getZ());
+        rightAffine.setTz(getPosition().getZ() + moveSpeed * getU().getZ());
     }
 
     private void moveBack() {
-      //  backwardAffine.setTx(getPosition().getX() + moveSpeed * -getN().getX());
+        backwardAffine.setTx(getPosition().getX() + moveSpeed * -getN().getX());
         backwardAffine.setTy(getPosition().getY() + moveSpeed * -getN().getY());
         backwardAffine.setTz(getPosition().getZ() + moveSpeed * -getN().getZ());
     }
@@ -265,6 +268,7 @@ public class MainApplication extends Application {
     public final Point3D getPosition() {
         return P.call(world.getLocalToSceneTransform());
     }
+
     public static void main(String[] args) {
         launch();
     }

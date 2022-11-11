@@ -71,8 +71,7 @@ public class Chunk extends MeshView {
      * or updated and re-added
      * @param world Game world where objects are spawned
      */
-    public void removeChunk(Group world) {
-        world.getChildren().remove(this);
+    public void removeChunk(Group world) { world.getChildren().remove(this);
     }
 
     /**

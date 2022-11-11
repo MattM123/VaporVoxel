@@ -8,6 +8,7 @@ import java.util.Vector;
 public class ChunkManager extends Vector<Chunk> {
     private final Player player;
     private final int RENDER_DISTANCE = 2;
+    public static ChunkRendering render;
 
     public ChunkManager(Player player, Group world) {
         this.player = player;
@@ -54,29 +55,25 @@ public class ChunkManager extends Vector<Chunk> {
         return c;
     }
     public void updateRender(Group world) {
-        //Spawn chunk rendering and de-rendering
-        if (getChunkWithPlayer() != null) {
-            ChunkRendering render = new ChunkRendering(RENDER_DISTANCE, getChunkWithPlayer().CHUNK_BOUNDS,
-                    getChunkWithPlayer(), this);
-            if (!world.getChildren().contains(get(0)))
-                get(0).updateChunk(world);
-            if (world.getChildren().contains(get(0)) && !render.getChunksToRender().contains(get(0))) {
-                get(0).removeChunk(world);
-            }
 
-            //Add chunks to render to world chunk list
-            addAll(render.getChunksToRender());
+            if (getChunkWithPlayer() != null) {
+                //Spawn chunk rendering and de-rendering
+                render = new ChunkRendering(RENDER_DISTANCE, getChunkWithPlayer().CHUNK_BOUNDS,
+                        getChunkWithPlayer(), this);
+                if (!world.getChildren().contains(get(0)))
+                    get(0).updateChunk(world);
+                if (world.getChildren().contains(get(0)) && !render.getChunksToRender().contains(get(0))) {
+                    get(0).removeChunk(world);
+                }
 
-            //Surrounding chunk rendering and de-rendering
-            for (Chunk chunk : render.getChunksToRender()) {
-                chunk.updateChunk(world);
-            }
-            for (Chunk chunk : this) {
-                if (!render.getChunksToRender().contains(chunk)) {
-                    chunk.removeChunk(world);
+                //Add chunks to render to world chunk list
+                addAll(render.getChunksToRender());
+
+                //Surrounding chunk rendering
+                for (Chunk chunk : render.getChunksToRender()) {
+                    chunk.updateChunk(world);
+
                 }
             }
-        }
-
     }
 }

@@ -1,6 +1,5 @@
 package com.marcuzzo.vaporvoxel;
 
-import javafx.application.Platform;
 import javafx.scene.Group;
 import javafx.scene.PerspectiveCamera;
 
@@ -19,14 +18,15 @@ public class Player extends PerspectiveCamera {
      */
     public void checkChunk() {
         if (playerChunk != manager.getChunkWithPlayer()) {
-            Thread t = new Thread(() -> Platform.runLater(() -> {
-                playerChunk = manager.getChunkWithPlayer();
-                manager.updateRender(world);
-            }));
-            t.start();
+            playerChunk = manager.getChunkWithPlayer();
+
+            //De-renders surrounding chunks
+            for (int i = 0; i < ChunkManager.render.getChunksToRender().size(); i++) {
+                world.getChildren().remove(ChunkManager.render.getChunksToRender().get(i));
+            }
+            manager.updateRender(world);
         }
     }
-
     public void setManager(ChunkManager manager) {
         this.manager = manager;
         this.playerChunk =  manager.getChunkWithPlayer();
