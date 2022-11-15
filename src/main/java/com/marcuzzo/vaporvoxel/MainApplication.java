@@ -2,7 +2,6 @@ package com.marcuzzo.vaporvoxel;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -23,7 +22,8 @@ import javafx.stage.Stage;
 import javafx.util.Callback;
 
 import java.io.IOException;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainApplication extends Application {
@@ -41,7 +41,7 @@ public class MainApplication extends Application {
     /**
      * Controls camera movement/sensitivity
      */
-    private final double moveSpeed = 0.2;
+    private final double moveSpeed = 0.1;
     private final BooleanProperty w = new SimpleBooleanProperty(false);
     private final BooleanProperty a = new SimpleBooleanProperty(false);
     private final BooleanProperty s = new SimpleBooleanProperty(false);
@@ -53,10 +53,12 @@ public class MainApplication extends Application {
     private final Affine backwardAffine = new Affine();
     private final Affine leftAffine = new Affine();
     private final Affine rightAffine = new Affine();
-    public static ExecutorService executor = Executors.newFixedThreadPool(4, Thread::new);
+    public static ExecutorService executor = Executors.newFixedThreadPool(6, Thread::new);
+    public static AnimationTimer chunkUpdater;
 
     @Override
     public void start(Stage stage) throws IOException {
+
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("view.fxml"));
         Parent root = fxmlLoader.load();
         world = new Group(root);
@@ -147,7 +149,7 @@ public class MainApplication extends Application {
         AnimationTimer timer = new AnimationTimer() {
             @Override
             public void handle(long timestamp) {
-                executor.execute(() -> Platform.runLater(() -> camera.checkChunk()));
+             //  camera.checkChunk();
 
                 if (!pause) {
                     if (w.get()) {
@@ -170,11 +172,20 @@ public class MainApplication extends Application {
             }
         };
 
+        chunkUpdater = new AnimationTimer() {
+            @Override
+            public void handle(long l) {
+                camera.checkChunk();
+            }
+        };
+
         anyPressed.addListener((obs, wasPressed, isNowPressed) -> {
             if (isNowPressed) {
                 timer.start();
+                chunkUpdater.start();
             } else {
                 timer.stop();
+                chunkUpdater.stop();
             }
         });
     }
