@@ -1,7 +1,6 @@
 package com.marcuzzo.vaporvoxel;
 
 import org.fxyz3d.geometry.Point3D;
-
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -150,10 +149,11 @@ public class ChunkRendering {
      * @return The list of chunks that should be rendered
      */
     public ArrayList<Chunk> getChunksToRender() {
+
         ArrayList<Chunk> chunks = new ArrayList<>();
-        CompletableFuture<Void> f = CompletableFuture.supplyAsync(() -> chunks.addAll(getCardinalChunks()), MainApplication.executor)
+        CompletableFuture<Void> f = CompletableFuture.supplyAsync(() -> chunks.addAll(getCardinalChunks()),  MainApplication.executor)
                 .thenRunAsync(() -> chunks.addAll(getTopQuadrantChunks()), MainApplication.executor)
-                                .thenRunAsync(() -> chunks.addAll(getBottomQuadrantChunks()), MainApplication.executor);
+                                .thenRunAsync(() -> chunks.addAll(getBottomQuadrantChunks()),  MainApplication.executor);
         chunks.add(playerChunk);
         try {
             f.get();
