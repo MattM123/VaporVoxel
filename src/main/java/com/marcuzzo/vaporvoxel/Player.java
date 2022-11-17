@@ -6,7 +6,7 @@ import javafx.scene.PerspectiveCamera;
 public class Player extends PerspectiveCamera {
     private Chunk playerChunk;
     private ChunkManager manager;
-    private Group world;
+    private final Group world;
     public Player(boolean b, Group world) {
         super(b);
         this.world = world;
@@ -31,7 +31,22 @@ public class Player extends PerspectiveCamera {
     public void setManager(ChunkManager manager) {
         this.manager = manager;
         this.playerChunk =  manager.getChunkWithPlayer();
-       // Viewport f = new Viewport();
+    }
+
+    /*
+    public Rectangle getViewport() {
+        double z = getBoundsInParent().getCenterZ();
+        double w = world.getScene().getWidth();
+        double h = world.getScene().getHeight();
+        double f = getFieldOfView();
+
+        Rectangle r = new Rectangle(-z * (w/h) * Math.tan(f/2), -z * Math.tan(f/2));
+        r.setX(getBoundsInLocal().getMinX());
+        r.setY(getBoundsInLocal().getMinY());
+        r.setFill(Color.GREEN);
+        r.setCursor(Cursor.CROSSHAIR);
+        System.out.println("W: " + r.getWidth() + " H: " + r.getHeight());
+        return r;
 
         /*
         So, in summary, the bounds of the scene extend from
@@ -43,7 +58,8 @@ public class Player extends PerspectiveCamera {
         in the bottom right, where z is the z-coordinate, w the width of the scene,
         h the height of the scene, and f the (vertical) angle of the field of view.
          */
-    }
+   // }
+
 
 
 }

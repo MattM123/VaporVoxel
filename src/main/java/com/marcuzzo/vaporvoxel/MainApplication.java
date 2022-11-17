@@ -2,6 +2,7 @@ package com.marcuzzo.vaporvoxel;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -41,24 +42,23 @@ public class MainApplication extends Application {
     /**
      * Controls camera movement/sensitivity
      */
-    private final double moveSpeed = 5;
+    private final double moveSpeed = 0.2;
     private final BooleanProperty w = new SimpleBooleanProperty(false);
     private final BooleanProperty a = new SimpleBooleanProperty(false);
     private final BooleanProperty s = new SimpleBooleanProperty(false);
     private final BooleanProperty d = new SimpleBooleanProperty(false);
     private final BooleanBinding anyPressed = w.or(a).or(s).or(d);
     private boolean pause = false;
-    private Player player;
+    private Player camera;
     private final Affine forwardAffine = new Affine();
     private final Affine backwardAffine = new Affine();
     private final Affine leftAffine = new Affine();
     private final Affine rightAffine = new Affine();
-    public static ExecutorService executor = Executors.newFixedThreadPool(6, Thread::new);
+    public static ExecutorService executor = Executors.newFixedThreadPool(4, Thread::new);
     public static AnimationTimer chunkUpdater;
 
     @Override
     public void start(Stage stage) throws IOException {
-
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("view.fxml"));
         Parent root = fxmlLoader.load();
         world = new Group(root);
@@ -68,14 +68,20 @@ public class MainApplication extends Application {
         stage.setScene(scene);
         stage.show();
         world.getChildren().add(new AmbientLight(Color.WHITE));
-        player = new Player(true, world);
-        ChunkManager manager = new ChunkManager(player, world);
-        player.setManager(manager);
+        camera = new Player(true, world);
+        ChunkManager manager = new ChunkManager(camera, world);
+        camera.setManager(manager);
 
-        Box b = new Box(1, 1, 1);
-        b.setMaterial(new PhongMaterial(Color.BLUE));
+
+        Box b = new Box(1,1,1);
+        b.setMaterial(new PhongMaterial(Color.GREEN));
         world.getChildren().add(b);
 
+        Rotate camRot = new Rotate(-90, Rotate.X_AXIS);
+        camera.setFarClip(2000);
+        camera.setNearClip(1);
+        camera.getTransforms().add(camRot);
+        scene.setCamera(camera);
         AtomicBoolean pressed = new AtomicBoolean(false);
         manager.updateRender(world);
 
@@ -91,22 +97,22 @@ public class MainApplication extends Application {
                 dy = event.getSceneY() - newY;
                 //Left
                 if (dx < 0) {
-                    rotation = new Rotate(-mouseSensitivity, player.getTranslateX(), player.getTranslateY(), player.getTranslateZ(), Rotate.Y_AXIS);
+                    rotation = new Rotate(-mouseSensitivity, camera.getTranslateX(), camera.getTranslateY(), camera.getTranslateZ(), Rotate.Y_AXIS);
                 }
                 //Right
                 else if (dx > 0) {
-                    rotation = new Rotate(mouseSensitivity, player.getTranslateX(), player.getTranslateY(), player.getTranslateZ(), Rotate.Y_AXIS);
+                    rotation = new Rotate(mouseSensitivity, camera.getTranslateX(), camera.getTranslateY(), camera.getTranslateZ(), Rotate.Y_AXIS);
                 }
                 //Up
                 else if (dy < 0) {
-                    rotation = new Rotate(mouseSensitivity, player.getTranslateX(), player.getTranslateY(), player.getTranslateZ(), Rotate.X_AXIS);
+                    rotation = new Rotate(mouseSensitivity, camera.getTranslateX(), camera.getTranslateY(), camera.getTranslateZ(), Rotate.X_AXIS);
                 }
                 //Down
                 else if (dy > 0) {
-                    rotation = new Rotate(-mouseSensitivity, player.getTranslateX(), player.getTranslateY(), player.getTranslateZ(), Rotate.X_AXIS);
+                    rotation = new Rotate(-mouseSensitivity, camera.getTranslateX(), camera.getTranslateY(), camera.getTranslateZ(), Rotate.X_AXIS);
                 }
 
-                player.getTransforms().add(rotation);
+                camera.getTransforms().add(rotation);
                 newX = event.getSceneX();
                 newY = event.getSceneY();
             }
@@ -134,8 +140,6 @@ public class MainApplication extends Application {
                 }
             }
         });
-
-
         /*
          Since the KeyPressed event only outputs the latest key event and not concurrent key events
          the event triggers are only used to set booleans to true on key pressed events
@@ -145,43 +149,42 @@ public class MainApplication extends Application {
         AnimationTimer timer = new AnimationTimer() {
             @Override
             public void handle(long timestamp) {
-             //  camera.checkChunk();
+                executor.execute(() -> Platform.runLater(() -> camera.checkChunk()));
 
                 if (!pause) {
                     if (w.get()) {
-                        player.getTransforms().add(forwardAffine);
+                        camera.getTransforms().add(forwardAffine);
                         moveForward();
                     }
                     if (a.get()) {
                         strafeLeft();
-                        player.getTransforms().add(leftAffine);
+                        camera.getTransforms().add(leftAffine);
                     }
                     if (s.get()) {
                         moveBack();
-                        player.getTransforms().add(backwardAffine);
+                        camera.getTransforms().add(backwardAffine);
                     }
                     if (d.get()) {
                         strafeRight();
-                        player.getTransforms().add(rightAffine);
+                        camera.getTransforms().add(rightAffine);
                     }
                 }
             }
         };
 
         chunkUpdater = new AnimationTimer() {
+
             @Override
             public void handle(long l) {
-                player.checkChunk();
+                camera.checkChunk();
             }
         };
 
         anyPressed.addListener((obs, wasPressed, isNowPressed) -> {
             if (isNowPressed) {
                 timer.start();
-                chunkUpdater.start();
             } else {
                 timer.stop();
-                chunkUpdater.stop();
             }
         });
     }
@@ -277,6 +280,6 @@ public class MainApplication extends Application {
     }
 
     public static void main(String[] args) {
-        launch(args);
+        launch();
     }
 }

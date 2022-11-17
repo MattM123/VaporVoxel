@@ -30,7 +30,6 @@ public class Cube extends Box {
 
    @Override
     public String toString() {
-        return "Upper Left Vertex: (x-" + getUpperLeftVertex().getX() + ",y-"
-                +  getUpperLeftVertex().getY() + ",z-" + getUpperLeftVertex().getZ() + ") ";
+       return getId();
     }
 }
