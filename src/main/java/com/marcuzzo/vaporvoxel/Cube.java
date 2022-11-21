@@ -27,9 +27,4 @@ public class Cube extends Box {
         return new Point3D(getBoundsInParent().getMinX(), getBoundsInParent().getMinY(),
                 getBoundsInParent().getMinZ());
     }
-
-   @Override
-    public String toString() {
-       return getId();
-    }
 }

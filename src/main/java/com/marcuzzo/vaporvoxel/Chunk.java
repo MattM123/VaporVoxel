@@ -10,15 +10,15 @@ import org.fxyz3d.shapes.primitives.ScatterMesh;
 import org.fxyz3d.shapes.primitives.helper.MarkerFactory;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class Chunk extends MeshView {
     private Point3D location;
     public final int CHUNK_BOUNDS = 16;
     public final int CHUNK_HEIGHT = 64;
-    private final ArrayList<Layer<Cube>> chunk = new ArrayList<>();//Cube[CHUNK_BOUNDS][CHUNK_BOUNDS][CHUNK_HEIGHT];
+    private final List<Layer<Cube>> chunk = new ArrayList<>();
 
     public Chunk() {
-
     }
     public Chunk initialize(int x, int y, int z) {
         location = new Point3D(x, y, z);
@@ -41,11 +41,10 @@ public class Chunk extends MeshView {
     /**
      * Iterates through a three-dimensional array of cubes and adds their upper left vertices to a
      * mesh used for the chunks structure. Adds a "blank" chunks to the world.
-     * @param world Game world where objects are spawned
      */
-    public void addToWorld(Group world) {
-        ArrayList<Point3D> cubes = new ArrayList<>();
-        for (ArrayList<Cube> value : chunk) {
+    public void updateMesh() {
+        List<Point3D> cubes = new ArrayList<>();
+        for (List<Cube> value : chunk) {
             for (Cube c : value) {
                 if (c.isActive()) {
                     cubes.add(c.getUpperLeftVertex());
@@ -56,10 +55,11 @@ public class Chunk extends MeshView {
             ScatterMesh mesh = new ScatterMesh(cubes, 1);
             mesh.setMarker(MarkerFactory.Marker.CUBE);
             mesh.setId("scatter");
+            setCache(true);
+            setCullFace(CullFace.FRONT);
             setMesh(mesh.getMeshFromId(mesh.getId()).getMesh());
-            setCullFace(CullFace.NONE);
             setMaterial(new PhongMaterial(Color.BLUE));
-            world.getChildren().add(this);
+           // world.getChildren().add(this);
         }
     }
 
@@ -85,7 +85,6 @@ public class Chunk extends MeshView {
      * @param world Game world where objects are spawned
      */
     public void updateChunk(Group world) {
-        removeChunk(world);
         for (Layer<Cube> cubes : chunk) {
             for (int y = 0; y < cubes.size(); y++) {
                 Cube c = cubes.get(y);
@@ -94,7 +93,8 @@ public class Chunk extends MeshView {
                 }
             }
         }
-        addToWorld(world);
+        removeChunk(world);
+        updateMesh();
     }
 
     @Override

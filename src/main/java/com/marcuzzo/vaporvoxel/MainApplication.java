@@ -2,7 +2,6 @@ package com.marcuzzo.vaporvoxel;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -54,8 +53,8 @@ public class MainApplication extends Application {
     private final Affine backwardAffine = new Affine();
     private final Affine leftAffine = new Affine();
     private final Affine rightAffine = new Affine();
-    public static ExecutorService executor = Executors.newFixedThreadPool(4, Thread::new);
-    public static AnimationTimer chunkUpdater;
+    public static ExecutorService executor = Executors.newFixedThreadPool(6, Thread::new);
+    public static ChunkManager publicManager ;
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -70,6 +69,7 @@ public class MainApplication extends Application {
         world.getChildren().add(new AmbientLight(Color.WHITE));
         camera = new Player(true, world);
         ChunkManager manager = new ChunkManager(camera, world);
+        publicManager = manager;
         camera.setManager(manager);
 
 
@@ -83,7 +83,7 @@ public class MainApplication extends Application {
         camera.getTransforms().add(camRot);
         scene.setCamera(camera);
         AtomicBoolean pressed = new AtomicBoolean(false);
-        manager.updateRender(world);
+
 
         scene.setOnMouseEntered((MouseEvent event) -> {
             pressed.set(true);
@@ -149,8 +149,8 @@ public class MainApplication extends Application {
         AnimationTimer timer = new AnimationTimer() {
             @Override
             public void handle(long timestamp) {
-                executor.execute(() -> Platform.runLater(() -> camera.checkChunk()));
-
+               // executor.execute(() -> Platform.runLater(() -> camera.checkChunk()));
+                camera.checkChunk();
                 if (!pause) {
                     if (w.get()) {
                         camera.getTransforms().add(forwardAffine);
@@ -169,14 +169,6 @@ public class MainApplication extends Application {
                         camera.getTransforms().add(rightAffine);
                     }
                 }
-            }
-        };
-
-        chunkUpdater = new AnimationTimer() {
-
-            @Override
-            public void handle(long l) {
-                camera.checkChunk();
             }
         };
 

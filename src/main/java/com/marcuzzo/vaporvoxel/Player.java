@@ -1,7 +1,15 @@
 package com.marcuzzo.vaporvoxel;
 
+import javafx.application.Platform;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 public class Player extends PerspectiveCamera {
     private Chunk playerChunk;
@@ -18,14 +26,46 @@ public class Player extends PerspectiveCamera {
      */
     public void checkChunk() {
         if (playerChunk != manager.getChunkWithPlayer()) {
-            MainApplication.chunkUpdater.start();
+            Instant t = Instant.now();
+            System.out.println("Start: 0.000000s");
 
-            //De-renders surrounding chunks
-            for (int i = 0; i < ChunkManager.render.getChunksToRender().size(); i++) {
-                world.getChildren().remove(ChunkManager.render.getChunksToRender().get(i));
-            }
+            //De-renders out of range chunks
+            //TODO: Optimize
+          //  world.getChildren().removeAll(ChunkManager.render.getChunksToRender());
+
+                for (Node chunk : world.getChildren()) {
+                    if (chunk instanceof Chunk c) {
+
+                        Future<Void> f = CompletableFuture.runAsync(() -> Platform.runLater(() -> {
+                            if (!ChunkManager.render.getChunksToRender().contains(c)) {
+                                world.getChildren().remove(chunk);
+                            }
+                        }), MainApplication.executor);
+                        try {
+                            f.get();
+                        } catch (InterruptedException | ExecutionException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+
+
+            Instant t1 = Instant.now();
+            Duration d = Duration.between(t, t1);
+            System.out.println(String.format("Time check: " + d + "s"));
+
+
+            //Renders more chunks from new player chunk
             manager.updateRender(world);
+
+
+
+            Instant t2 = Instant.now();
+            Duration d1 = Duration.between(t, t2);
+            System.out.println("Time check: " + d1 + "s");
             playerChunk = manager.getChunkWithPlayer();
+
         }
     }
     public void setManager(ChunkManager manager) {

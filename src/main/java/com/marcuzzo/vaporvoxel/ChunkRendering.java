@@ -1,8 +1,8 @@
 package com.marcuzzo.vaporvoxel;
 
 import org.fxyz3d.geometry.Point3D;
-
 import java.util.ArrayList;
+import java.util.List;
 
 
 public class ChunkRendering {
@@ -35,8 +35,8 @@ public class ChunkRendering {
      * @return A list of chunks that should be rendered diagonally from the chunk the
      * player is in.
      */
-    public ArrayList<Chunk> getQuadrantChunks() {
-        ArrayList<Chunk> chunks = new ArrayList<>();
+    private List<Chunk> getQuadrantChunks() {
+        List<Chunk> chunks = new ArrayList<>();
             //Top left quadrant
             Point3D TLstart = new Point3D(playerChunk.getLocation().getX() - bounds, playerChunk.getLocation().getY() + bounds, 0);
             for (int i = 0; i < renderDistance; i++) {
@@ -102,7 +102,7 @@ public class ChunkRendering {
      *
      * @return A list of chunks that should be rendered in x, y, -x, and -y directions
      */
-    public ArrayList<Chunk> getCardinalChunks() {
+    private ArrayList<Chunk> getCardinalChunks() {
         ArrayList<Chunk> chunks = new ArrayList<>();
         //Positive X
         for (int i = 0; i <= renderDistance; i++) {
@@ -148,11 +148,11 @@ public class ChunkRendering {
      * Returns a list of chunks that should be rendered around a player based on a render distance value
      * @return The list of chunks that should be rendered
      */
-    public ArrayList<Chunk> getChunksToRender() {
-        ArrayList<Chunk> chunks = new ArrayList<>();
+    public List<Chunk> getChunksToRender() {
+        List<Chunk> chunks = new ArrayList<>();
         chunks.add(playerChunk);
-        chunks.addAll(getCardinalChunks());
         chunks.addAll(getQuadrantChunks());
+        chunks.addAll(getCardinalChunks());
 
         return chunks;
     }
