@@ -53,7 +53,8 @@ public class MainApplication extends Application {
     private final Affine backwardAffine = new Affine();
     private final Affine leftAffine = new Affine();
     private final Affine rightAffine = new Affine();
-    public static ExecutorService executor = Executors.newFixedThreadPool(6, Thread::new);
+    public static ExecutorService executor = Executors.newFixedThreadPool(15, Thread::new);
+    public static ExecutorService chunkExecutor = Executors.newFixedThreadPool(6, Thread::new);
     public static ChunkManager publicManager ;
 
     @Override

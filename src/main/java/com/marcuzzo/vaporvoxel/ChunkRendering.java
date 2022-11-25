@@ -1,6 +1,7 @@
 package com.marcuzzo.vaporvoxel;
 
 import org.fxyz3d.geometry.Point3D;
+
 import java.util.ArrayList;
 import java.util.List;
 

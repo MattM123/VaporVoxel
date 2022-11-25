@@ -15,7 +15,7 @@ import java.util.List;
 public class Chunk extends MeshView {
     private Point3D location;
     public final int CHUNK_BOUNDS = 16;
-    public final int CHUNK_HEIGHT = 64;
+    public final int CHUNK_HEIGHT = 256;
     private final List<Layer<Cube>> chunk = new ArrayList<>();
 
     public Chunk() {
@@ -28,14 +28,15 @@ public class Chunk extends MeshView {
                 for (int k = 0; k < CHUNK_HEIGHT; k++) {
                     Layer<Cube> l = new Layer<>();
                     l.setZ(k);
-                    Cube c = new Cube();
-                    c.setTranslateZ(c.getTranslateZ() + l.getZ());
-                    c.resizeRelocate(location.getX() + i, location.getY() + j, c.getBoundsInLocal().getWidth(), c.getBoundsInLocal().getHeight());
+                    Cube c = new Cube(x + i, y + j, z + k);
+                 //   c.setTranslateZ(c.getTranslateZ() + l.getZ());
+                 //   c.resizeRelocate(location.getX() + i, location.getY() + j, c.getBoundsInLocal().getWidth(), c.getBoundsInLocal().getHeight());
                     l.add(c);
                     chunk.add(l);
                 }
             }
         }
+        updateMesh();
         return this;
     }
     /**
@@ -47,7 +48,7 @@ public class Chunk extends MeshView {
         for (List<Cube> value : chunk) {
             for (Cube c : value) {
                 if (c.isActive()) {
-                    cubes.add(c.getUpperLeftVertex());
+                    cubes.add(c);
                 }
             }
         }
@@ -59,7 +60,6 @@ public class Chunk extends MeshView {
             setCullFace(CullFace.FRONT);
             setMesh(mesh.getMeshFromId(mesh.getId()).getMesh());
             setMaterial(new PhongMaterial(Color.BLUE));
-           // world.getChildren().add(this);
         }
     }
 

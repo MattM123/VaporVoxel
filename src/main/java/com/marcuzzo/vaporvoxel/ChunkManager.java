@@ -3,6 +3,7 @@ package com.marcuzzo.vaporvoxel;
 import javafx.application.Platform;
 import javafx.scene.Group;
 import org.fxyz3d.geometry.Point3D;
+
 import java.util.Vector;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -10,7 +11,7 @@ import java.util.concurrent.Future;
 
 public class ChunkManager extends Vector<Chunk> {
     private final Player player;
-    public final int RENDER_DISTANCE = 3;
+    public final int RENDER_DISTANCE = 2;
     public static ChunkRendering render;
 
     public ChunkManager(Player player, Group world) {
@@ -73,19 +74,25 @@ public class ChunkManager extends Vector<Chunk> {
             }
 
             //Add chunks to render to world chunk list
-            addAll(render.getChunksToRender());
+            Future<Void> f = CompletableFuture.runAsync(() -> Platform.runLater(() -> addAll(render.getChunksToRender())), MainApplication.chunkExecutor)
+                    .thenRunAsync(() -> Platform.runLater(() -> {
+                        for (Chunk chunk : render.getChunksToRender()) {
+                            Future<Void> f1 = CompletableFuture.runAsync(() -> Platform.runLater(() -> {
+                                chunk.updateChunk(world);
+                                world.getChildren().add(chunk);
+                            }), MainApplication.chunkExecutor);
+                            try {
+                                f1.get();
+                            } catch (ExecutionException | InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }));
 
-            //Surrounding chunk rendering
-            for (Chunk chunk : render.getChunksToRender()) {
-                Future<Void> f = CompletableFuture.runAsync(() -> Platform.runLater(() -> {
-                    chunk.updateChunk(world);
-                    world.getChildren().add(chunk);
-                }), MainApplication.executor);
-                try {
-                    f.get();
-                } catch (ExecutionException | InterruptedException e) {
-                    e.printStackTrace();
-                }
+            try {
+                f.get();
+            } catch (ExecutionException | InterruptedException e) {
+                e.printStackTrace();
             }
         }
     }

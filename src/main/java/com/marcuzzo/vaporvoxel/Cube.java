@@ -1,13 +1,12 @@
 package com.marcuzzo.vaporvoxel;
 
-import javafx.scene.shape.Box;
 import org.fxyz3d.geometry.Point3D;
 
-public class Cube extends Box {
+public class Cube extends Point3D {
     private boolean isActive;
     private BlockType type;
-    public Cube() {
-        super();
+    public Cube(int x, int y, int z) {
+        super(x, y, z);
         isActive = false;
         setType(BlockType.DEFAULT);
     }
@@ -23,8 +22,8 @@ public class Cube extends Box {
         this.type = type;
     }
 
-    public Point3D getUpperLeftVertex() {
-        return new Point3D(getBoundsInParent().getMinX(), getBoundsInParent().getMinY(),
-                getBoundsInParent().getMinZ());
-    }
+   // public Point3D getUpperLeftVertex() {
+   //     return new Point3D(getBoundsInParent().getMinX(), getBoundsInParent().getMinY(),
+   //             getBoundsInParent().getMinZ());
+  //  }
 }
