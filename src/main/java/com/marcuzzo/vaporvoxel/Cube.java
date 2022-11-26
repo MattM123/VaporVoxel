@@ -22,8 +22,4 @@ public class Cube extends Point3D {
         this.type = type;
     }
 
-   // public Point3D getUpperLeftVertex() {
-   //     return new Point3D(getBoundsInParent().getMinX(), getBoundsInParent().getMinY(),
-   //             getBoundsInParent().getMinZ());
-  //  }
 }

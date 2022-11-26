@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.scene.Group;
 import org.fxyz3d.geometry.Point3D;
 
+import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -11,7 +12,7 @@ import java.util.concurrent.Future;
 
 public class ChunkManager extends Vector<Chunk> {
     private final Player player;
-    public final int RENDER_DISTANCE = 2;
+    public final int RENDER_DISTANCE = 4;
     public static ChunkRendering render;
 
     public ChunkManager(Player player, Group world) {
@@ -67,32 +68,31 @@ public class ChunkManager extends Vector<Chunk> {
             //Spawn chunk rendering and de-rendering
             render = new ChunkRendering(RENDER_DISTANCE, getChunkWithPlayer().CHUNK_BOUNDS,
                     getChunkWithPlayer(), this);
+
+            List<Chunk> cList = render.getChunksToRender();
+
             if (!world.getChildren().contains(get(0)))
                 get(0).updateChunk(world);
-            if (world.getChildren().contains(get(0)) && !render.getChunksToRender().contains(get(0))) {
-                get(0).removeChunk(world);
+            if (world.getChildren().contains(get(0)) && !cList.contains(get(0))) {
+                world.getChildren().remove(get(0));
             }
 
-            //Add chunks to render to world chunk list
-            Future<Void> f = CompletableFuture.runAsync(() -> Platform.runLater(() -> addAll(render.getChunksToRender())), MainApplication.chunkExecutor)
-                    .thenRunAsync(() -> Platform.runLater(() -> {
-                        for (Chunk chunk : render.getChunksToRender()) {
-                            Future<Void> f1 = CompletableFuture.runAsync(() -> Platform.runLater(() -> {
-                                chunk.updateChunk(world);
-                                world.getChildren().add(chunk);
-                            }), MainApplication.chunkExecutor);
-                            try {
-                                f1.get();
-                            } catch (ExecutionException | InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }));
+            //Add chunks to render to world chunk list if they don't already exist
+            for (Chunk chunk : cList) {
+                Future<Void> f1 = CompletableFuture.runAsync(() -> Platform.runLater(() -> {
+                    if (!contains(chunk))
+                        add(chunk);
 
-            try {
-                f.get();
-            } catch (ExecutionException | InterruptedException e) {
-                e.printStackTrace();
+                    chunk.updateChunk(world);
+
+                    if (!world.getChildren().contains(chunk))
+                        world.getChildren().add(chunk);
+                }), MainApplication.executor);
+                try {
+                    f1.get();
+                } catch (ExecutionException | InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }

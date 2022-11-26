@@ -16,9 +16,15 @@ public class Chunk extends MeshView {
     private Point3D location;
     public final int CHUNK_BOUNDS = 16;
     public final int CHUNK_HEIGHT = 256;
-    private final List<Layer<Cube>> chunk = new ArrayList<>();
+    private final List<Cube> chunk = new ArrayList<>();
+    private Group world;
+    private boolean didChange = false;
 
     public Chunk() {
+        setOnMouseClicked(mouseEvent -> {
+            didChange = true;
+            updateChunk(world);
+        });
     }
     public Chunk initialize(int x, int y, int z) {
         location = new Point3D(x, y, z);
@@ -26,17 +32,13 @@ public class Chunk extends MeshView {
         for (int i = 0; i < CHUNK_BOUNDS; i++) {
             for (int j = 0; j < CHUNK_BOUNDS; j++) {
                 for (int k = 0; k < CHUNK_HEIGHT; k++) {
-                    Layer<Cube> l = new Layer<>();
-                    l.setZ(k);
                     Cube c = new Cube(x + i, y + j, z + k);
-                 //   c.setTranslateZ(c.getTranslateZ() + l.getZ());
-                 //   c.resizeRelocate(location.getX() + i, location.getY() + j, c.getBoundsInLocal().getWidth(), c.getBoundsInLocal().getHeight());
-                    l.add(c);
-                    chunk.add(l);
+                    chunk.add(c);
                 }
             }
         }
         updateMesh();
+        didChange = true;
         return this;
     }
     /**
@@ -45,11 +47,9 @@ public class Chunk extends MeshView {
      */
     public void updateMesh() {
         List<Point3D> cubes = new ArrayList<>();
-        for (List<Cube> value : chunk) {
-            for (Cube c : value) {
-                if (c.isActive()) {
-                    cubes.add(c);
-                }
+        for (Cube value : chunk) {
+            if (value.isActive()) {
+                cubes.add(value);
             }
         }
         if (cubes.size() > 0) {
@@ -61,14 +61,7 @@ public class Chunk extends MeshView {
             setMesh(mesh.getMeshFromId(mesh.getId()).getMesh());
             setMaterial(new PhongMaterial(Color.BLUE));
         }
-    }
-
-    /**
-     * Removes a chunks mesh view from the world so its mesh can be unloaded
-     * or updated and re-added
-     * @param world Game world where objects are spawned
-     */
-    public void removeChunk(Group world) { world.getChildren().remove(this);
+        didChange = false;
     }
 
     /**
@@ -85,16 +78,15 @@ public class Chunk extends MeshView {
      * @param world Game world where objects are spawned
      */
     public void updateChunk(Group world) {
-        for (Layer<Cube> cubes : chunk) {
-            for (int y = 0; y < cubes.size(); y++) {
-                Cube c = cubes.get(y);
-                if (cubes.getZ() == CHUNK_HEIGHT / 2) {
-                    c.setActive(true);
+        this.world = world;
+        if (didChange) {
+            for (Cube value : chunk) {
+                if ((int) value.getZ() == CHUNK_HEIGHT / 2) {
+                    value.setActive(true);
                 }
             }
+            updateMesh();
         }
-        removeChunk(world);
-        updateMesh();
     }
 
     @Override

@@ -24,30 +24,22 @@ public class Player extends PerspectiveCamera {
      */
     public void checkChunk() {
         if (playerChunk != manager.getChunkWithPlayer()) {
-          //  Instant t = Instant.now();
-          //  System.out.println("Start: 0.000000s");
 
             //De-renders out of range chunks
             for (Node chunk : world.getChildren()) {
-
                 Future<Void> f = CompletableFuture.runAsync(() -> Platform.runLater(() -> {
                     if (chunk instanceof Chunk c) {
                         if (!ChunkManager.render.getChunksToRender().contains(c)) {
                             world.getChildren().remove(chunk);
                         }
                     }
-                }), MainApplication.chunkExecutor);
+                }), MainApplication.executor);
                 try {
                     f.get();
                 } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 }
-
             }
-
-          //  Instant t1 = Instant.now();
-         //   Duration d = Duration.between(t, t1);
-         //   System.out.println(String.format("Time check: " + d + "s"));
 
             //Calculates new chunks based on change in player chunk
             Future<Void> f = CompletableFuture.runAsync(() -> Platform.runLater(() -> manager.updateRender(world)), MainApplication.executor);
@@ -57,11 +49,6 @@ public class Player extends PerspectiveCamera {
                 e.printStackTrace();
             }
             playerChunk = manager.getChunkWithPlayer();
-
-        //     Instant t2 = Instant.now();
-        //      Duration d1 = Duration.between(t, t2);
-        //      System.out.println("Time check: " + d1 + "s");
-
         }
     }
     public void setManager(ChunkManager manager) {

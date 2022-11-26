@@ -2,6 +2,7 @@ package com.marcuzzo.vaporvoxel;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -22,8 +23,7 @@ import javafx.stage.Stage;
 import javafx.util.Callback;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainApplication extends Application {
@@ -53,8 +53,7 @@ public class MainApplication extends Application {
     private final Affine backwardAffine = new Affine();
     private final Affine leftAffine = new Affine();
     private final Affine rightAffine = new Affine();
-    public static ExecutorService executor = Executors.newFixedThreadPool(15, Thread::new);
-    public static ExecutorService chunkExecutor = Executors.newFixedThreadPool(6, Thread::new);
+    public static ExecutorService executor = Executors.newFixedThreadPool(16, Thread::new);
     public static ChunkManager publicManager ;
 
     @Override
@@ -150,8 +149,14 @@ public class MainApplication extends Application {
         AnimationTimer timer = new AnimationTimer() {
             @Override
             public void handle(long timestamp) {
-               // executor.execute(() -> Platform.runLater(() -> camera.checkChunk()));
-                camera.checkChunk();
+                executor.execute(() -> Platform.runLater(() -> camera.checkChunk()));
+             //   Future<Void> f = CompletableFuture.runAsync(() -> Platform.runLater(() -> camera.checkChunk()));
+              //  try {
+              //      f.get();
+              //  } catch (InterruptedException | ExecutionException e) {
+             //       e.printStackTrace();
+             //   }
+
                 if (!pause) {
                     if (w.get()) {
                         camera.getTransforms().add(forwardAffine);
