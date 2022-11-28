@@ -62,7 +62,7 @@ public class MainApplication extends Application {
         Parent root = fxmlLoader.load();
         world = new Group(root);
 
-        Scene scene = new Scene(world, Double.MAX_VALUE, Double.MAX_VALUE);
+        Scene scene = new Scene(world, Double.MAX_VALUE, Double.MAX_VALUE, true);
         stage.setTitle("VaporVoxel");
         stage.setScene(scene);
         stage.show();

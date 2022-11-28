@@ -12,7 +12,7 @@ import java.util.concurrent.Future;
 
 public class ChunkManager extends Vector<Chunk> {
     private final Player player;
-    public final int RENDER_DISTANCE = 4;
+    public final int RENDER_DISTANCE = 3;
     public static ChunkRendering render;
 
     public ChunkManager(Player player, Group world) {
