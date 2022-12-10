@@ -5,6 +5,7 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -24,12 +25,12 @@ public class Player extends PerspectiveCamera {
      */
     public void checkChunk() {
         if (playerChunk != manager.getChunkWithPlayer()) {
-
             //De-renders out of range chunks
+            List<Chunk> chunkList = ChunkManager.render.getChunksToRender();
             for (Node chunk : world.getChildren()) {
                 Future<Void> f = CompletableFuture.runAsync(() -> Platform.runLater(() -> {
                     if (chunk instanceof Chunk c) {
-                        if (!ChunkManager.render.getChunksToRender().contains(c)) {
+                        if (!chunkList.contains(c)) {
                             world.getChildren().remove(chunk);
                         }
                     }

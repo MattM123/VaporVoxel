@@ -12,13 +12,14 @@ import java.util.concurrent.Future;
 
 public class ChunkManager extends Vector<Chunk> {
     private final Player player;
-    public final int RENDER_DISTANCE = 3;
-    public static ChunkRendering render;
+    public final int RENDER_DISTANCE = 6;
+    public static ChunkRenderer render;
 
     public ChunkManager(Player player, Group world) {
         this.player = player;
         player.setManager(this);
         add(new Chunk().initialize(0, 0, 0));
+        get(0).updateChunk(world);
         updateRender(world);
     }
 
@@ -66,13 +67,13 @@ public class ChunkManager extends Vector<Chunk> {
         if (getChunkWithPlayer() != null) {
 
             //Spawn chunk rendering and de-rendering
-            render = new ChunkRendering(RENDER_DISTANCE, getChunkWithPlayer().CHUNK_BOUNDS,
+            render = new ChunkRenderer(RENDER_DISTANCE, getChunkWithPlayer().CHUNK_BOUNDS,
                     getChunkWithPlayer(), this);
 
             List<Chunk> cList = render.getChunksToRender();
 
             if (!world.getChildren().contains(get(0)))
-                get(0).updateChunk(world);
+                world.getChildren().add(get(0));
             if (world.getChildren().contains(get(0)) && !cList.contains(get(0))) {
                 world.getChildren().remove(get(0));
             }
@@ -80,13 +81,14 @@ public class ChunkManager extends Vector<Chunk> {
             //Add chunks to render to world chunk list if they don't already exist
             for (Chunk chunk : cList) {
                 Future<Void> f1 = CompletableFuture.runAsync(() -> Platform.runLater(() -> {
-                    if (!contains(chunk))
+                    if (!contains(chunk)) {
                         add(chunk);
-
-                    chunk.updateChunk(world);
+                        chunk.updateChunk(world);
+                    }
 
                     if (!world.getChildren().contains(chunk))
                         world.getChildren().add(chunk);
+
                 }), MainApplication.executor);
                 try {
                     f1.get();

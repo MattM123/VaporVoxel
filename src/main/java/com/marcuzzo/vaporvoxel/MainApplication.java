@@ -8,14 +8,9 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Point3D;
-import javafx.scene.AmbientLight;
-import javafx.scene.Group;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
+import javafx.scene.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.PhongMaterial;
-import javafx.scene.shape.Box;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
@@ -23,7 +18,8 @@ import javafx.stage.Stage;
 import javafx.util.Callback;
 
 import java.io.IOException;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainApplication extends Application {
@@ -62,8 +58,8 @@ public class MainApplication extends Application {
         Parent root = fxmlLoader.load();
         world = new Group(root);
 
-        Scene scene = new Scene(world, Double.MAX_VALUE, Double.MAX_VALUE, true);
-        stage.setTitle("VaporVoxel");
+        Scene scene = new Scene(world, Double.MAX_VALUE, Double.MAX_VALUE, true, SceneAntialiasing.DISABLED);
+        stage.setTitle("CraftMine");
         stage.setScene(scene);
         stage.show();
         world.getChildren().add(new AmbientLight(Color.WHITE));
@@ -72,10 +68,6 @@ public class MainApplication extends Application {
         publicManager = manager;
         camera.setManager(manager);
 
-
-        Box b = new Box(1,1,1);
-        b.setMaterial(new PhongMaterial(Color.GREEN));
-        world.getChildren().add(b);
 
         Rotate camRot = new Rotate(-90, Rotate.X_AXIS);
         camera.setFarClip(2000);
@@ -150,12 +142,6 @@ public class MainApplication extends Application {
             @Override
             public void handle(long timestamp) {
                 executor.execute(() -> Platform.runLater(() -> camera.checkChunk()));
-             //   Future<Void> f = CompletableFuture.runAsync(() -> Platform.runLater(() -> camera.checkChunk()));
-              //  try {
-              //      f.get();
-              //  } catch (InterruptedException | ExecutionException e) {
-             //       e.printStackTrace();
-             //   }
 
                 if (!pause) {
                     if (w.get()) {
