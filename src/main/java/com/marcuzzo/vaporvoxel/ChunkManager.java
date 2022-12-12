@@ -18,7 +18,7 @@ public class ChunkManager extends GlueList<Chunk> {
         this.player = player;
         player.setManager(this);
         add(new Chunk().initialize(0, 0, 0));
-        get(0).updateChunk(world);
+        get(0).updateMesh();
         updateRender(world);
     }
 
@@ -84,7 +84,7 @@ public class ChunkManager extends GlueList<Chunk> {
                 Future<Void> f1 = CompletableFuture.runAsync(() -> Platform.runLater(() -> {
                     if (!contains(chunk)) {
                         add(chunk);
-                        chunk.updateChunk(world);
+                        chunk.updateMesh();
                     }
 
                     if (!world.getChildren().contains(chunk))

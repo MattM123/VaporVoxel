@@ -1,6 +1,5 @@
 package com.marcuzzo.vaporvoxel;
 
-import javafx.scene.Group;
 import javafx.scene.image.Image;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.*;
@@ -8,34 +7,33 @@ import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.shapes.primitives.ScatterMesh;
 import org.fxyz3d.shapes.primitives.helper.MarkerFactory;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Chunk extends MeshView {
     private Point3D location;
     public final int CHUNK_BOUNDS = 16;
-    public final int CHUNK_HEIGHT = 256;
+    public final int CHUNK_HEIGHT = 320;
     private final List<Cube> chunk = new GlueList<>();
-    private Group world;
     private boolean didChange = false;
     private final List<Cube> cubes = new GlueList<>();
-    private  float maxZ = 0;
+    private final long seed = 1234567890;
+
+    private final GlueList<Column> columns = new GlueList<>(CHUNK_BOUNDS * CHUNK_BOUNDS);
 
     public Chunk() {
         setOnMouseClicked(mouseEvent -> {
             didChange = true;
-            updateChunk(world);
+            updateMesh();
         });
     }
 
     /**
      * Initializes a chunk at a given point. Populates a chunk with cubes.
      * The number of cubes is calculated: CHUNK_BOUNDS x CHUNK_BOUNDS x CHUNK_HEIGHT
-     * @param x coordinate of chunk corner
-     * @param y coordinate of chunk corner
-     * @param z coordinate of chunk corner
+     * @param x coordinate of top left chunk corner
+     * @param y coordinate of top left chunk corner
+     * @param z coordinate of top left chunk corner
      * @return Returns the chunk
      */
     public Chunk initialize(int x, int y, int z) {
@@ -43,12 +41,22 @@ public class Chunk extends MeshView {
         for (int i = 0; i < CHUNK_BOUNDS; i++) {
             for (int j = 0; j < CHUNK_BOUNDS; j++) {
                 for (int k = 0; k < CHUNK_HEIGHT; k++) {
-                    Cube c = new Cube(x + i, y + j, z + k);
-                    chunk.add(c);
+                    Cube value = new Cube(x + i, y + j, z + k);
+                    chunk.add(value);
+
                 }
             }
         }
-        updateChunk(world);
+
+        for (int x1 = x; x1 < x + CHUNK_BOUNDS; x1++) {
+            for (int y1 = y; y1 < y + CHUNK_BOUNDS; y1++) {
+                float v = OpenSimplex.noise2(seed, x, y);
+                columns.add(new Column(x1, y1).setValue((float) Math.abs(Math.floor(v + 100))));
+
+            }
+        }
+
+        updateMesh();
         didChange = true;
         return this;
     }
@@ -56,24 +64,32 @@ public class Chunk extends MeshView {
      * Iterates through a chunks points and creates a chunk mesh based on which points are active.
      */
     public void updateMesh() {
-        Instant i1 = Instant.now();
-        System.out.println("======Updating Chunk at (" + getLocation().getX() + " " + getLocation().getY() + " " + getLocation().getZ() + ")======");
+        System.out.println("======Updating Chunk Mesh at (" + getLocation().getX() + " " + getLocation().getY() + " " + getLocation().getZ() + ")======");
+
+        if (didChange) {
+            for (Column col : columns) {
+
+                Cube c = getCubeWithLocation(col.getX(), col.getY(), col.getValue());
+                if (c != null) {
+                    c.setActive(true);
+                    cubes.add(c);
+                }
+            }
+        }
         //Removes inner cubes that are culled
+        /*
         List<Cube> toRemove = new GlueList<>();
         for (Cube value : cubes) {
-            if (value.getZ() < maxZ) {
+            if (value.getZ() <= maxZ && value.getZ() > 5) {
                 toRemove.add(value);
             }
         }
         cubes.removeAll(toRemove);
 
-        Instant i2 = Instant.now();
-        Duration d = Duration.between(i1, i2);
-        System.out.println("Time to update cubes: " + d.getNano());
+         */
 
         //Mesh creation
         if (cubes.size() > 0) {
-            Instant i3 = Instant.now();
             List<Point3D> pCubes = new ArrayList<>(cubes);
 
             //Defining block texture atlas
@@ -126,41 +142,16 @@ public class Chunk extends MeshView {
             mesh.getTexCoords().setAll(newTex);
             setMesh(mesh);
             setMaterial(mat);
-
-            Instant i4 = Instant.now();
-            Duration d1 = Duration.between(i3, i4);
-            System.out.println("Time to update triangle mesh: " + d1.getNano());
         }
         didChange = false;
 
 
     }
 
-    /**
-     * For each cube, this function checks the surrounding area. If there is at least one space not occupied by a cube,
-     * not including diagonally adjacent cubes, then that cube is set to active and will render.
-     * @param world Game world where objects are spawned
-     */
-    public void updateChunk(Group world) {
-        this.world = world;
-        if (didChange) {
-            for (Cube value : chunk) {
-                boolean b = value.getGradientValue() < 0.00 && value.getGradientValue() < 0.10;
-                value.setActive(b);
-                if (b) {
-                    if (value.getZ() > maxZ)
-                        maxZ = value.getZ();
-                    cubes.add(value);
-                }
-            }
-            updateMesh();
-        }
-        else {
-            System.out.println("Chunk unchanged: Skipping mesh update");
-        }
 
+    public Cube getCubeWithLocation(float x, float y, float z) {
+        return chunk.stream().filter(c -> c.getX() == x && c.getY() == y && c.getZ() == z).findFirst().orElse(null);
     }
-
     /**
      * Since the location of each chunk is unique this is used as an identifier for chunk rendering
      * @return The bottom left vertex of this chunks mesh view.
