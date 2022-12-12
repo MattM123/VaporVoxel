@@ -10,7 +10,7 @@ public class Cube extends Point3D {
         super(x, y, z);
         isActive = false;
         setType(BlockType.DEFAULT);
-        setGradientValue(OpenSimplex.noise3_ImproveXZ(123456789, x, z, y));
+       // setGradientValue(OpenSimplex.noise3_ImproveXZ(123456789, x, z, y));
     }
 
     public boolean isActive(){
@@ -24,13 +24,13 @@ public class Cube extends Point3D {
         this.type = type;
     }
 
-    public double getGradientValue() {
-        return noise;
-    }
+   // public double getGradientValue() {
+    //    return noise;
+    //}
 
-    public void setGradientValue(double n) {
-        this.noise = n;
-    }
+   // public void setGradientValue(double n) {
+   //     this.noise = n;
+   // }
 
     @Override
     /*
