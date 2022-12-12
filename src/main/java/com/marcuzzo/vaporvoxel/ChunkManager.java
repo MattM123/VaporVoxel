@@ -5,14 +5,13 @@ import javafx.scene.Group;
 import org.fxyz3d.geometry.Point3D;
 
 import java.util.List;
-import java.util.Vector;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-public class ChunkManager extends Vector<Chunk> {
+public class ChunkManager extends GlueList<Chunk> {
     private final Player player;
-    public final int RENDER_DISTANCE = 6;
+    public final int RENDER_DISTANCE = 3;
     public static ChunkRenderer render;
 
     public ChunkManager(Player player, Group world) {
@@ -25,11 +24,13 @@ public class ChunkManager extends Vector<Chunk> {
 
     public Chunk getChunkWithPlayer() {
         Chunk c = null;
-        for (Chunk chunk : this) {
-            if (Math.abs(player.getBoundsInParent().getCenterX() - chunk.getBoundsInParent().getCenterX()) <= chunk.CHUNK_BOUNDS &&
-                    Math.abs(player.getBoundsInParent().getCenterY() - chunk.getBoundsInParent().getCenterY()) <= chunk.CHUNK_BOUNDS) {
-                c = chunk;
-                break;
+        if (render != null) {
+            for (Chunk chunk : this) {
+                if (Math.abs(player.getBoundsInParent().getCenterX() - chunk.getBoundsInParent().getCenterX()) <= chunk.CHUNK_BOUNDS &&
+                        Math.abs(player.getBoundsInParent().getCenterY() - chunk.getBoundsInParent().getCenterY()) <= chunk.CHUNK_BOUNDS) {
+                    c = chunk;
+                    break;
+                }
             }
         }
         if (size() == 1) {

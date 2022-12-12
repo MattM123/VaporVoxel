@@ -97,12 +97,12 @@ public class Chunk extends MeshView {
                     0.03125f, 0.03125f, //lower right corner
                     0.03125f, 0f,
             };
-           // cubes.get(5).setType(BlockType.TEST);
+            // cubes.get(5).setType(BlockType.TEST);
             System.out.println("Cubes in chunk: " + cubes.size());
 
             //sets texture coords for faces. Every 12 face elements = 2 triangular
             //faces = 1 square of a cube, see trianglemesh docs
-           // System.out.println(mesh.getFaces());
+            // System.out.println(mesh.getFaces());
             System.out.println("Face Count: " + mesh.getFaces().size());
             for (int i = 1; i < mesh.getFaces().size(); i += 12) {
                 for (Cube cube : cubes) {
@@ -174,4 +174,3 @@ public class Chunk extends MeshView {
         return "(" + location.getX() + "," + location.getY() + ", " + location.getZ() + ")";
     }
 }
-

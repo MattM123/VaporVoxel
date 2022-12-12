@@ -3,7 +3,6 @@ package com.marcuzzo.vaporvoxel;
 import org.fxyz3d.geometry.Point3D;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 
 
@@ -150,10 +149,6 @@ public class ChunkRenderer {
         chunks.add(playerChunk);
         chunks.addAll(qChunk);
         chunks.addAll(cChunk);
-
-        if (new HashSet<>(manager).containsAll(getCardinalChunks()) && new HashSet<>(manager).containsAll(getCardinalChunks())) {
-            System.out.println("Rendering pre-existing chunks");
-        }
 
         return chunks;
     }

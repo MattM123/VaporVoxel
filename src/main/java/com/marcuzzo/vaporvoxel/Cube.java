@@ -10,7 +10,7 @@ public class Cube extends Point3D {
         super(x, y, z);
         isActive = false;
         setType(BlockType.DEFAULT);
-        setGradientValue(SimplexNoise.noise(x, y, z));
+        setGradientValue(OpenSimplex.noise3_ImproveXZ(123456789, x, z, y));
     }
 
     public boolean isActive(){
@@ -37,13 +37,7 @@ public class Cube extends Point3D {
      Compares 2 cubes. Will return true if and only if the cubes location is the same as the other cube
      */
     public boolean equals(Object o) {
-        if (o.getClass() == Object.class) {
-            Cube c = (Cube) o;
-            return this.x == c.x && this.y == c.y && this.z == c.z;
-        }
-        else {
-            return false;
-        }
+        Cube c = (Cube) o;
+        return this.x == c.x && this.y == c.y && this.z == c.z;
     }
-
 }
