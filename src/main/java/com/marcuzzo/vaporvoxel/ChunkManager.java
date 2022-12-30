@@ -11,7 +11,7 @@ import java.util.concurrent.Future;
 
 public class ChunkManager extends GlueList<Chunk> {
     private final Player player;
-    public final int RENDER_DISTANCE = 3;
+    public final int RENDER_DISTANCE = 5;
     public static ChunkRenderer render;
 
     public ChunkManager(Player player, Group world) {

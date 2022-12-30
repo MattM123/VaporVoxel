@@ -8,7 +8,10 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Point3D;
-import javafx.scene.*;
+import javafx.scene.AmbientLight;
+import javafx.scene.Group;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Affine;
@@ -37,7 +40,7 @@ public class MainApplication extends Application {
     /**
      * Controls camera movement/sensitivity
      */
-    private final double moveSpeed = 0.2;
+    private final double moveSpeed = 1.0;
     private final BooleanProperty w = new SimpleBooleanProperty(false);
     private final BooleanProperty a = new SimpleBooleanProperty(false);
     private final BooleanProperty s = new SimpleBooleanProperty(false);
@@ -49,16 +52,17 @@ public class MainApplication extends Application {
     private final Affine backwardAffine = new Affine();
     private final Affine leftAffine = new Affine();
     private final Affine rightAffine = new Affine();
-    public static ExecutorService executor = Executors.newFixedThreadPool(16, Thread::new);
+    public static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread::new);
     public static ChunkManager publicManager ;
 
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("view.fxml"));
         Parent root = fxmlLoader.load();
+
         world = new Group(root);
 
-        Scene scene = new Scene(world, Double.MAX_VALUE, Double.MAX_VALUE, true, SceneAntialiasing.DISABLED);
+        Scene scene = new Scene(world, Double.MAX_VALUE, Double.MAX_VALUE, true);
         stage.setTitle("CraftMine");
         stage.setScene(scene);
         stage.show();
@@ -68,14 +72,13 @@ public class MainApplication extends Application {
         publicManager = manager;
         camera.setManager(manager);
 
-
         Rotate camRot = new Rotate(-90, Rotate.X_AXIS);
         camera.setFarClip(2000);
         camera.setNearClip(1);
         camera.getTransforms().add(camRot);
+        camera.setFieldOfView(60);
         scene.setCamera(camera);
         AtomicBoolean pressed = new AtomicBoolean(false);
-
 
         scene.setOnMouseEntered((MouseEvent event) -> {
             pressed.set(true);
@@ -163,6 +166,8 @@ public class MainApplication extends Application {
                 }
             }
         };
+
+
 
         anyPressed.addListener((obs, wasPressed, isNowPressed) -> {
             if (isNowPressed) {

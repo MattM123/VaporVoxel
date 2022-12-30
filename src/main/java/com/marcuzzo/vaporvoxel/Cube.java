@@ -5,7 +5,6 @@ import org.fxyz3d.geometry.Point3D;
 public class Cube extends Point3D {
     private boolean isActive;
     private BlockType type;
-    private double noise;
     public Cube(int x, int y, int z) {
         super(x, y, z);
         isActive = false;
@@ -13,10 +12,10 @@ public class Cube extends Point3D {
        // setGradientValue(OpenSimplex.noise3_ImproveXZ(123456789, x, z, y));
     }
 
-    public boolean isActive(){
-        return isActive;
-    }
-    public void setActive(boolean b) { isActive = b; }
+    //public boolean isActive(){
+    //    return isActive;
+   // }
+    //public void setActive(boolean b) { isActive = b; }
     public BlockType getType() {
         return type;
     }
@@ -24,20 +23,4 @@ public class Cube extends Point3D {
         this.type = type;
     }
 
-   // public double getGradientValue() {
-    //    return noise;
-    //}
-
-   // public void setGradientValue(double n) {
-   //     this.noise = n;
-   // }
-
-    @Override
-    /*
-     Compares 2 cubes. Will return true if and only if the cubes location is the same as the other cube
-     */
-    public boolean equals(Object o) {
-        Cube c = (Cube) o;
-        return this.x == c.x && this.y == c.y && this.z == c.z;
-    }
 }
