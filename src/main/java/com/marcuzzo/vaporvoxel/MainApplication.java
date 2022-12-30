@@ -40,7 +40,7 @@ public class MainApplication extends Application {
     /**
      * Controls camera movement/sensitivity
      */
-    private final double moveSpeed = 1.0;
+    private final double moveSpeed = 0.8;
     private final BooleanProperty w = new SimpleBooleanProperty(false);
     private final BooleanProperty a = new SimpleBooleanProperty(false);
     private final BooleanProperty s = new SimpleBooleanProperty(false);
