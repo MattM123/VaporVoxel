@@ -11,6 +11,7 @@ public class ChunkRenderer {
     private final int bounds;
     private final Chunk playerChunk;
     private final ChunkManager manager;
+    private final TextureAtlas textures;
 
     /**
      *
@@ -21,7 +22,8 @@ public class ChunkRenderer {
      * @param manager The chunk manager that is responsible for rendering,
      *                de-rendering and updating chunks
      */
-    public ChunkRenderer(int renderDistance, int bounds, Chunk playerChunk, ChunkManager manager) {
+    public ChunkRenderer(int renderDistance, int bounds, Chunk playerChunk, ChunkManager manager, TextureAtlas textures) {
+        this.textures = textures;
         this.renderDistance = renderDistance;
         this.bounds = bounds;
         this.playerChunk = playerChunk;
@@ -45,7 +47,7 @@ public class ChunkRenderer {
                 if (manager.containsChunkWithLocation(new Point3D(x, y, 0))) {
                     chunks.add(manager.getChunkWithLocation(new Point3D(x, y, 0)));
                 } else {
-                    chunks.add(new Chunk().initialize(x, y, 0));
+                    chunks.add(new Chunk(textures).initialize(x, y, 0));
                 }
             }
         }
@@ -58,7 +60,7 @@ public class ChunkRenderer {
                     if (manager.containsChunkWithLocation(new Point3D(x, y, 0))) {
                         chunks.add(manager.getChunkWithLocation(new Point3D(x, y, 0)));
                     } else {
-                        chunks.add(new Chunk().initialize(x, y, 0));
+                        chunks.add(new Chunk(textures).initialize(x, y, 0));
                     }
                 }
             }
@@ -70,7 +72,7 @@ public class ChunkRenderer {
                     if (manager.containsChunkWithLocation(new Point3D(x, y, 0))) {
                         chunks.add(manager.getChunkWithLocation(new Point3D(x, y, 0)));
                     } else {
-                        chunks.add(new Chunk().initialize(x, y, 0));
+                        chunks.add(new Chunk(textures).initialize(x, y, 0));
                     }
                 }
             }
@@ -82,7 +84,7 @@ public class ChunkRenderer {
                     if (manager.containsChunkWithLocation(new Point3D(x, y, 0))) {
                         chunks.add(manager.getChunkWithLocation(new Point3D(x, y, 0)));
                     } else {
-                        chunks.add(new Chunk().initialize(x, y, 0));
+                        chunks.add(new Chunk(textures).initialize(x, y, 0));
                     }
                 }
             }
@@ -103,7 +105,7 @@ public class ChunkRenderer {
                 chunks.add(manager.getChunkWithLocation(new Point3D(playerChunk.getLocation().getX() + (i * bounds), playerChunk.getLocation().getY(), 0)));
             }
             else {
-                chunks.add(new Chunk().initialize((int) playerChunk.getLocation().getX() + (i * bounds), (int) playerChunk.getLocation().getY(), 0));
+                chunks.add(new Chunk(textures).initialize((int) playerChunk.getLocation().getX() + (i * bounds), (int) playerChunk.getLocation().getY(), 0));
             }
         }
 
@@ -113,7 +115,7 @@ public class ChunkRenderer {
                 chunks.add(manager.getChunkWithLocation(new Point3D(playerChunk.getLocation().getX() - (i * bounds), playerChunk.getLocation().getY(), 0)));
             }
             else {
-                chunks.add(new Chunk().initialize((int) playerChunk.getLocation().getX() - (i * bounds), (int) playerChunk.getLocation().getY(), 0));
+                chunks.add(new Chunk(textures).initialize((int) playerChunk.getLocation().getX() - (i * bounds), (int) playerChunk.getLocation().getY(), 0));
             }
         }
 
@@ -123,7 +125,7 @@ public class ChunkRenderer {
                 chunks.add(manager.getChunkWithLocation(new Point3D(playerChunk.getLocation().getX(), playerChunk.getLocation().getY() + (i * bounds), 0)));
             }
             else {
-                chunks.add(new Chunk().initialize((int) playerChunk.getLocation().getX(), (int) playerChunk.getLocation().getY() + (i * bounds), 0));
+                chunks.add(new Chunk(textures).initialize((int) playerChunk.getLocation().getX(), (int) playerChunk.getLocation().getY() + (i * bounds), 0));
             }
         }
         //Negative Y
@@ -132,7 +134,7 @@ public class ChunkRenderer {
                 chunks.add(manager.getChunkWithLocation(new Point3D(playerChunk.getLocation().getX(), playerChunk.getLocation().getY() - (i * bounds), 0)));
             }
             else {
-                chunks.add(new Chunk().initialize((int) playerChunk.getLocation().getX(), (int) playerChunk.getLocation().getY() - (i * bounds), 0));
+                chunks.add(new Chunk(textures).initialize((int) playerChunk.getLocation().getX(), (int) playerChunk.getLocation().getY() - (i * bounds), 0));
             }
         }
         return chunks;

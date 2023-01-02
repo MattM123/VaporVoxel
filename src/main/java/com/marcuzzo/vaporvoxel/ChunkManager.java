@@ -2,9 +2,12 @@ package com.marcuzzo.vaporvoxel;
 
 import javafx.application.Platform;
 import javafx.scene.Group;
+import javafx.scene.image.Image;
 import org.fxyz3d.geometry.Point3D;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -13,11 +16,18 @@ public class ChunkManager extends GlueList<Chunk> {
     private final Player player;
     public final int RENDER_DISTANCE = 5;
     public static ChunkRenderer render;
+    private final TextureAtlas textures;
 
     public ChunkManager(Player player, Group world) {
+
+        Map<String, Image> textureMap = new HashMap<>();
+        textureMap.put("grass_top", new Image("/grass_top.png"));
+        textureMap.put("grass_side", new Image("/grass_side.png"));
+        textures = new TextureAtlas((textureMap));
+
         this.player = player;
         player.setManager(this);
-        add(new Chunk().initialize(0, 0, 0));
+        add(new Chunk(textures).initialize(0, 0, 0));
         get(0).updateMesh();
         updateRender(world);
     }
@@ -69,7 +79,7 @@ public class ChunkManager extends GlueList<Chunk> {
 
             //Spawn chunk rendering and de-rendering
             render = new ChunkRenderer(RENDER_DISTANCE, getChunkWithPlayer().CHUNK_BOUNDS,
-                    getChunkWithPlayer(), this);
+                    getChunkWithPlayer(), this, textures);
 
             List<Chunk> cList = render.getChunksToRender();
 

@@ -8,10 +8,7 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Point3D;
-import javafx.scene.AmbientLight;
-import javafx.scene.Group;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
+import javafx.scene.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Affine;
@@ -26,7 +23,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainApplication extends Application {
-    private Group world;
+    public static Group world;
     private Rotate rotation = new Rotate(0, Rotate.X_AXIS);
 
     /**
@@ -58,12 +55,12 @@ public class MainApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("view.fxml"));
-        Parent root = fxmlLoader.load();
+        //Parent root = fxmlLoader.load();
 
-        world = new Group(root);
+        world = new Group();
 
-        Scene scene = new Scene(world, Double.MAX_VALUE, Double.MAX_VALUE, true);
-        stage.setTitle("CraftMine");
+        Scene scene = new Scene(world, Double.MAX_VALUE, Double.MAX_VALUE, true, SceneAntialiasing.DISABLED);
+        stage.setTitle("TestFrame");
         stage.setScene(scene);
         stage.show();
         world.getChildren().add(new AmbientLight(Color.WHITE));
