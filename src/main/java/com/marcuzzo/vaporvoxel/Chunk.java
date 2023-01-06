@@ -1,11 +1,9 @@
 package com.marcuzzo.vaporvoxel;
 
-import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.CullFace;
 import org.apache.commons.lang3.ArrayUtils;
 import org.fxyz3d.geometry.Point3D;
-import org.fxyz3d.shapes.composites.PolyLine3D;
 import org.fxyz3d.shapes.polygon.PolygonMesh;
 import org.fxyz3d.shapes.polygon.PolygonMeshView;
 
@@ -19,9 +17,11 @@ public class Chunk extends PolygonMeshView {
     private boolean didChange = false;
     private final List<Cube> cubes = new GlueList<>();
     private final int[][] heightMap = new int[CHUNK_BOUNDS][CHUNK_BOUNDS];
-    private final List<Cube> heightMapPointList = new GlueList<>();
+    private final GlueList<Cube> heightMapPointList = new GlueList<>();
     private final long seed = 1234567890;
     private final TextureAtlas textures;
+
+    //private Point3D pickedCube;
 
     public Chunk(TextureAtlas t) {
         textures = t;
@@ -30,29 +30,86 @@ public class Chunk extends PolygonMeshView {
             updateMesh();
         });
 
+        /*=========================================
+        Cube selection outline
+        =========================================*/
+        //Check if adjacent points are in heightmappointlist
+        /*
         setOnMouseMoved(mouseEvent -> {
             Point3D p = Point3D.convertFromJavaFXPoint3D(mouseEvent.getPickResult().getIntersectedPoint());
-            if ((mouseEvent.getX() >= Math.floor(p.getX()) && mouseEvent.getX() < Math.ceil(p.getX())
-                && (mouseEvent.getY() >= Math.floor(p.getY()) && mouseEvent.getY() < Math.ceil(p.getY()))
-                && (mouseEvent.getZ() >= Math.floor(p.getZ()) && mouseEvent.getZ() < Math.ceil(p.getZ())))) {
+            //If cursor hovers top or bottom of cube
+            if (p.getX() > Math.floor(p.getX()) && p.getX() < Math.ceil(p.getX())
+            && p.getY() > Math.floor(p.getY()) && p.getY() < Math.ceil(p.getY())
+                && p.getZ() == Math.ceil(p.getZ()) || p.getZ() == Math.ceil(p.getZ())) {
+                pickedCube = new Point3D(Math.floor(p.getX()), Math.floor(p.getY()), p.getZ());
+            }
 
+            //If cursor hovers in the XZ plane
+            if (p.getX() > Math.floor(p.getX()) && p.getX() < Math.ceil(p.getX())
+                    && p.getZ() > Math.floor(p.getZ()) && p.getZ() < Math.ceil(p.getZ())
+                    && p.getY() == Math.ceil(p.getY()) || p.getY() == Math.ceil(p.getY())) {
+                Cube a = new Cube((int) Math.floor(p.getX()), (int) p.getY() + 1, (int) Math.floor(p.getZ()));
+                Cube b = new Cube((int) Math.floor(p.getX()), (int) p.getY() - 1, (int) Math.floor(p.getZ()));
+                if (heightMapPointList.contains(a) && !heightMapPointList.contains(b)) {
+                    System.out.println("test");
+                    pickedCube = new Point3D(Math.floor(p.getX()), p.getY() - 1, Math.ceil(p.getZ()));
+                }
+                else if (heightMapPointList.contains(b) && !heightMapPointList.contains(a)) {
+                    System.out.println("test1");
+                    pickedCube = new Point3D(Math.floor(p.getX()), p.getY() + 1, Math.ceil(p.getZ()));
+                }
+            }
+
+            //If cursor hovers in the YZ plane
+        //    if (p.getY() > Math.floor(p.getY()) && p.getY() < Math.ceil(p.getY())
+         //           && p.getZ() > Math.floor(p.getZ()) && p.getZ() < Math.ceil(p.getZ())
+          //          && p.getX() == Math.ceil(p.getX()) || p.getX() == Math.ceil(p.getX())) {
+          //      pickedCube = new Point3D(p.getX() - 1, Math.floor(p.getY()), Math.floor(p.getZ()) + 1);
+          //  }
+
+
+            //if x/y > x/y + 0.5
+            //if x/y < x/y + 0.5
+           // if (p.getZ() > Math.floor(p.getZ()) && p.getZ() < Math.ceil(p.getZ()))
+          //      pickedCube = new Point3D(Math.floor(p.getX()), Math.floor(p.getY()), Math.floor(p.getZ()) + 1);
+          //  else
+            System.out.println(p);
+            if (pickedCube != null) {
                 List<Point3D> points = new GlueList<>();
-                points.add(new Point3D(Math.floor(p.getX() + 1), Math.floor(p.getY()), Math.floor(p.getZ())));
-                points.add(new Point3D(Math.floor(p.getX()), Math.floor(p.getY() + 1), Math.floor(p.getZ())));
-                points.add(new Point3D(Math.floor(p.getX() + 1), Math.floor(p.getY() + 1), Math.floor(p.getZ())));
-                points.add(new Point3D(Math.floor(p.getX()), Math.floor(p.getY()), Math.floor(p.getZ()) + 1));
-                points.add(new Point3D(Math.floor(p.getX()) + 1, Math.floor(p.getY()), Math.floor(p.getZ()) + 1));
-                points.add(new Point3D(Math.floor(p.getX()), Math.floor(p.getY()) + 1, Math.floor(p.getZ()) +1));
-                points.add(new Point3D(Math.floor(p.getX()) + 1, Math.floor(p.getY()) + 1, Math.floor(p.getZ()) + 1));
 
-                PolyLine3D line = new PolyLine3D(points, 2f, Color.RED);
-                MainApplication.world.getChildren().addAll(line);
+                points.add(pickedCube);
+                points.add(new Point3D(pickedCube.getX() + 1, pickedCube.getY(), pickedCube.getZ()));
+                points.add(new Point3D(pickedCube.getX() + 1, pickedCube.getY() + 1, pickedCube.getZ()));
+                points.add(new Point3D(pickedCube.getX(), pickedCube.getY() + 1, pickedCube.getZ()));
+                points.add(pickedCube);
+
+
+                points.add(new Point3D(pickedCube.getX(), pickedCube.getY(), pickedCube.getZ() - 1));
+                points.add(new Point3D(pickedCube.getX() + 1, pickedCube.getY(), pickedCube.getZ() - 1));
+                points.add(new Point3D(pickedCube.getX() + 1, pickedCube.getY() + 1, pickedCube.getZ() - 1));
+                points.add(new Point3D(pickedCube.getX(), pickedCube.getY() + 1, pickedCube.getZ() - 1));
+                points.add(new Point3D(pickedCube.getX(), pickedCube.getY(), pickedCube.getZ() - 1));
+
+
+                PickCubeOutline line = new PickCubeOutline(points, 0.02f, Color.BLACK, PolyLine3D.LineType.RIBBON);
+                line.meshView.setDrawMode(DrawMode.LINE);
+
+                for (Node n : MainApplication.world.getChildren()) {
+                    CompletableFuture.runAsync(() -> Platform.runLater(() -> {
+                        if (n instanceof PickCubeOutline) {
+                            MainApplication.world.getChildren().remove(n);
+                        }
+                    }), MainApplication.executor);
+                }
+           //     MainApplication.world.getChildren().addAll(line);
             }
         });
+
+         */
     }
 
     /**
-     * Initializes a chunk at a given point. Populates a chunk with cubes.
+     * Initializes a chunk at a given point. Populates a chunk heightmapped points
      * The number of cubes is calculated: CHUNK_BOUNDS x CHUNK_BOUNDS x CHUNK_HEIGHT
      * @param x coordinate of top left chunk corner
      * @param y coordinate of top left chunk corner
@@ -72,7 +129,7 @@ public class Chunk extends PolygonMeshView {
 
         //Affects coalescence of terrain. A higher value will result in more condensed, sharp peaks and a lower value will result in
         //more smooth, spread out hills.
-        double var2 = 0.005;
+        double var2 = 0.1;//0.005;
 
         int xCount = 0;
         int yCount = 0;
@@ -130,7 +187,8 @@ public class Chunk extends PolygonMeshView {
     }
 
     /**
-     * Iterates through a chunks points and creates a chunk mesh based on which points are active.
+     * Generates chunk mesh based on height-mapped and interpolated points on initial chunk creation
+     * Also removes and adds points to mesh based on player actions post-chunk creation.
      */
     public void updateMesh() {
         if (cubes.size() > 0 && didChange) {
@@ -152,20 +210,21 @@ public class Chunk extends PolygonMeshView {
             TextureRegion grass_top = textures.getRegion("grass_top");
             TextureRegion grass_side = textures.getRegion("grass_side");
             float[] texCoords = {
-                    (float) grass_top.getTextureCoordinates(0, 0)[0], (float) grass_top.getTextureCoordinates(0, 0)[1],//upper left corner
+                    (float) grass_top.getTextureCoordinates(0, 0)[0], (float) grass_top.getTextureCoordinates(0, 0)[1],
                     (float) grass_top.getTextureCoordinates(0, 256)[0], (float) grass_top.getTextureCoordinates(0, 256)[1],
-                    (float) grass_top.getTextureCoordinates(256, 256)[0], (float) grass_top.getTextureCoordinates(256, 256)[1],//bottom right corner
+                    (float) grass_top.getTextureCoordinates(256, 256)[0], (float) grass_top.getTextureCoordinates(256, 256)[1],
                     (float) grass_top.getTextureCoordinates(256, 0)[0], (float) grass_top.getTextureCoordinates(256, 0)[1],
 
-                    (float) grass_side.getTextureCoordinates(0, 0)[0], (float) grass_side.getTextureCoordinates(0, 0)[1],//upper left corner
+                    (float) grass_side.getTextureCoordinates(0, 0)[0], (float) grass_side.getTextureCoordinates(0, 0)[1],
                     (float) grass_side.getTextureCoordinates(0, 256)[0], (float) grass_side.getTextureCoordinates(0, 256)[1],
-                    (float) grass_side.getTextureCoordinates(256, 256)[0], (float) grass_side.getTextureCoordinates(256, 256)[1],//bottom right corner
+                    (float) grass_side.getTextureCoordinates(256, 256)[0], (float) grass_side.getTextureCoordinates(256, 256)[1],
                     (float) grass_side.getTextureCoordinates(256, 0)[0], (float) grass_side.getTextureCoordinates(256, 0)[1],
 
             };
 
             float[] points = new float[0];
             int[][] faces = new int[0][0];
+            heightMapPointList.addAll(getInterpolatedCubes());
 
             /*===================================
               Rendering Z Axis Faces
@@ -240,13 +299,16 @@ public class Chunk extends PolygonMeshView {
                 List<Cube> x = heightMapPointList.stream().filter(q -> q.getX() == (getLocation().getX() + finalI)).toList();
                 List<Cube> y = heightMapPointList.stream().filter(q -> q.getY() == (getLocation().getY() + finalI)).toList();
 
+
                 if (!x.isEmpty()) {
                     for (Cube point3D : x) {
                         int[] face = new int[0];
                         int[] face1 = new int[0];
 
                         //Determines if additional faces should be rendered
-                        boolean b = heightMapPointList.contains(new Cube((int) point3D.getX() - 1, (int) point3D.getY(), (int) point3D.getZ()));
+                       // Cube b = heightMapPointList.stream().filter(cube -> cube.getX() == point3D.getX() - 1 && cube.getY() == point3D.getY() && cube.getZ() == point3D.getZ()).findFirst().orElse(null);
+                       // Cube c = heightMapPointList.stream().filter(cube -> cube.getX() == point3D.getX() + 1 && cube.getY() == point3D.getY() && cube.getZ() == point3D.getZ()).findFirst().orElse(null);
+                         boolean b =       heightMapPointList.contains(new Cube((int) point3D.getX() - 1, (int) point3D.getY(), (int) point3D.getZ()));
 
                         //First face set
                         float[] t = {point3D.getX(), point3D.getY(), point3D.getZ()};
@@ -377,6 +439,8 @@ public class Chunk extends PolygonMeshView {
                         int[] face1 = new int[0];
 
                         //Determines if additional faces should be rendered
+                       // Cube b = heightMapPointList.stream().filter(cube -> cube.getX() == point3D.getX() && cube.getY() - 1 == point3D.getY() && cube.getZ() == point3D.getZ()).findFirst().orElse(null);
+                       // Cube c = heightMapPointList.stream().filter(cube -> cube.getX() == point3D.getX()  && cube.getY() + 1 == point3D.getY() && cube.getZ() == point3D.getZ()).findFirst().orElse(null);
                         boolean b = heightMapPointList.contains(new Cube((int) point3D.getX(), (int) point3D.getY() - 1, (int) point3D.getZ()));
 
                         //First face set
@@ -511,6 +575,7 @@ public class Chunk extends PolygonMeshView {
 
             System.out.println(mesh.getPoints().size() + " Visible Vertices");
             System.out.println(mesh.getFaces().length + " Visible Faces");
+            System.out.println("Visible Cubes: " + heightMapPointList.size());
             System.out.println("Total Cubes in chunk: " + cubes.size());
 
             setCullFace(CullFace.NONE);
@@ -539,6 +604,100 @@ public class Chunk extends PolygonMeshView {
             }
         }
         return out;
+    }
+
+    /**
+     * Given a chunk heightmap, interpolates between cubes to fill in vertical gaps in terrain generation
+     *       |-----|
+     *       |  d  |
+     * |-----|-----|-----|
+     * |  c  |base |  a  |
+     * |-----|-----|-----|
+     *       |  b  |
+     *       |-----|
+     */
+    private List<Cube> getInterpolatedCubes() {
+        List<Cube> interpolation = new GlueList<>();
+        for (int i = 0; i < heightMapPointList.size; i++) {
+            int finalI = i;
+            Cube a = heightMapPointList.stream().filter(cube -> cube.getX() == heightMapPointList.get(finalI).getX() + 1 && cube.getY() == heightMapPointList.get(finalI).getY()).findFirst().orElse(null);
+            Cube b = heightMapPointList.stream().filter(cube -> cube.getX() == heightMapPointList.get(finalI).getX() && cube.getY() + 1 == heightMapPointList.get(finalI).getY()).findFirst().orElse(null);
+            Cube c = heightMapPointList.stream().filter(cube -> cube.getX() == heightMapPointList.get(finalI).getX() - 1 && cube.getY() == heightMapPointList.get(finalI).getY()).findFirst().orElse(null);
+            Cube d = heightMapPointList.stream().filter(cube -> cube.getX() == heightMapPointList.get(finalI).getX() && cube.getY() - 1 == heightMapPointList.get(finalI).getY()).findFirst().orElse(null);
+
+            if (a != null) {
+                //Get the tallest column and the number of cubes to interpolate
+                int taller = (int) a.getZ() - (int) heightMapPointList.get(i).getZ();
+                int numOfCubes = Math.abs(taller) - 1;
+                boolean aTaller = taller > 0;
+
+                for (int j = 1; j < numOfCubes + 1; j++) {
+                    Cube cube;
+                    if (aTaller) {
+                        cube = new Cube((int) a.getX(), (int) a.getY(), (int) a.getZ() - j);
+                    } else {
+                        cube = new Cube((int) heightMapPointList.get(i).getX(), (int) heightMapPointList.get(i).getY(), (int) heightMapPointList.get(i).getZ() - j);
+                    }
+                    cube.setType(BlockType.DEFAULT);
+                    if (!interpolation.contains(cube))
+                        interpolation.add(cube);
+                }
+            }
+            if (b != null) {
+                //Get the tallest column and the number of cubes to interpolate
+                int taller = (int) b.getZ() - (int) heightMapPointList.get(i).getZ();
+                int numOfCubes = Math.abs(taller) - 1;
+                boolean aTaller = taller > 0;
+
+                for (int j = 1; j < numOfCubes + 1; j++) {
+                    Cube cube;
+                    if (aTaller) {
+                        cube = new Cube((int) b.getX(), (int) b.getY(), (int) b.getZ() - j);
+                    } else {
+                        cube = new Cube((int) heightMapPointList.get(i).getX(), (int) heightMapPointList.get(i).getY(), (int) heightMapPointList.get(i).getZ() - j);
+                    }
+                    cube.setType(BlockType.DEFAULT);
+                    if (!interpolation.contains(cube))
+                        interpolation.add(cube);
+                }
+            }
+            if (c != null) {
+                //Get the tallest column and the number of cubes to interpolate
+                int taller = (int) c.getZ() - (int) heightMapPointList.get(i).getZ();
+                int numOfCubes = Math.abs(taller) - 1;
+                boolean aTaller = taller > 0;
+
+                for (int j = 1; j < numOfCubes + 1; j++) {
+                    Cube cube;
+                    if (aTaller) {
+                        cube = new Cube((int) c.getX(), (int) c.getY(), (int) c.getZ() - j);
+                    } else {
+                        cube = new Cube((int) heightMapPointList.get(i).getX(), (int) heightMapPointList.get(i).getY(), (int) heightMapPointList.get(i).getZ() - j);
+                    }
+                    cube.setType(BlockType.DEFAULT);
+                    if (!interpolation.contains(cube))
+                        interpolation.add(cube);
+                }
+            }
+            if (d != null) {
+                //Get the tallest column and the number of cubes to interpolate
+                int taller = (int) d.getZ() - (int) heightMapPointList.get(i).getZ();
+                int numOfCubes = Math.abs(taller) - 1;
+                boolean aTaller = taller > 0;
+                for (int j = 1; j < numOfCubes + 1; j++) {
+                    Cube cube;
+                    if (aTaller) {
+                        cube = new Cube((int) d.getX(), (int) d.getY(), (int) d.getZ() - j);
+                    } else {
+                        cube = new Cube((int) heightMapPointList.get(i).getX(), (int) heightMapPointList.get(i).getY(), (int) heightMapPointList.get(i).getZ() - j);
+                    }
+                    cube.setType(BlockType.DEFAULT);
+                    if (!interpolation.contains(cube))
+                        interpolation.add(cube);
+                }
+            }
+        }
+        return interpolation;
     }
     /**
      * Since the location of each chunk is unique this is used as an identifier for chunk rendering

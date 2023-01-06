@@ -6,10 +6,14 @@ import javafx.application.Platform;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.Point3D;
-import javafx.scene.*;
+import javafx.scene.AmbientLight;
+import javafx.scene.Group;
+import javafx.scene.Scene;
+import javafx.scene.SceneAntialiasing;
+import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
@@ -17,7 +21,6 @@ import javafx.scene.transform.Transform;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 
-import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -53,28 +56,42 @@ public class MainApplication extends Application {
     public static ChunkManager publicManager ;
 
     @Override
-    public void start(Stage stage) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("view.fxml"));
+    public void start(Stage stage) {
+        //FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("view.fxml"));
         //Parent root = fxmlLoader.load();
 
+        //Group root = new Group();
         world = new Group();
 
-        Scene scene = new Scene(world, Double.MAX_VALUE, Double.MAX_VALUE, true, SceneAntialiasing.DISABLED);
-        stage.setTitle("TestFrame");
-        stage.setScene(scene);
-        stage.show();
         world.getChildren().add(new AmbientLight(Color.WHITE));
         camera = new Player(true, world);
         ChunkManager manager = new ChunkManager(camera, world);
         publicManager = manager;
         camera.setManager(manager);
 
+
+
         Rotate camRot = new Rotate(-90, Rotate.X_AXIS);
         camera.setFarClip(2000);
         camera.setNearClip(1);
         camera.getTransforms().add(camRot);
         camera.setFieldOfView(60);
+
+
+        StackPane pane = new StackPane();
+        pane.setMaxHeight(100);
+        pane.setMaxWidth(100);
+        pane.getChildren().addAll(new Label("Test"));
+        world.getChildren().add(pane);
+
+
+        Scene scene = new Scene(world, Double.MAX_VALUE, Double.MAX_VALUE, true, SceneAntialiasing.DISABLED);
         scene.setCamera(camera);
+        stage.setTitle("TestFrame");
+        stage.setScene(scene);
+        stage.show();
+
+
         AtomicBoolean pressed = new AtomicBoolean(false);
 
         scene.setOnMouseEntered((MouseEvent event) -> {
@@ -84,6 +101,8 @@ public class MainApplication extends Application {
         });
 
         scene.setOnMouseMoved((MouseEvent event) -> {
+            pane.setLayoutX(camera.getBoundsInParent().getCenterX());
+            pane.setLayoutY(camera.getBoundsInParent().getCenterY());
             if (pressed.get() && !pause) {
                 dx = event.getSceneX() - newX;
                 dy = event.getSceneY() - newY;
@@ -111,6 +130,8 @@ public class MainApplication extends Application {
         });
 
         scene.setOnKeyPressed(event -> {
+            pane.setLayoutX(camera.getBoundsInParent().getCenterX());
+            pane.setLayoutY(camera.getBoundsInParent().getCenterY());
             switch (event.getCode()){
                 case A -> a.set(true);
                 case D -> d.set(true);

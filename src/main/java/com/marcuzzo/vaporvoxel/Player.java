@@ -28,18 +28,13 @@ public class Player extends PerspectiveCamera {
             //De-renders out of range chunks
             List<Chunk> chunkList = ChunkManager.render.getChunksToRender();
             for (Node chunk : world.getChildren()) {
-                Future<Void> f = CompletableFuture.runAsync(() -> Platform.runLater(() -> {
+                CompletableFuture.runAsync(() -> Platform.runLater(() -> {
                     if (chunk instanceof Chunk c) {
                         if (!chunkList.contains(c)) {
                             world.getChildren().remove(chunk);
                         }
                     }
                 }), MainApplication.executor);
-                try {
-                    f.get();
-                } catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
-                }
             }
 
             //Calculates new chunks based on change in player chunk
