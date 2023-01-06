@@ -129,7 +129,7 @@ public class Chunk extends PolygonMeshView {
 
         //Affects coalescence of terrain. A higher value will result in more condensed, sharp peaks and a lower value will result in
         //more smooth, spread out hills.
-        double var2 = 0.1;//0.005;
+        double var2 = 0.005;
 
         int xCount = 0;
         int yCount = 0;
@@ -305,27 +305,26 @@ public class Chunk extends PolygonMeshView {
                         int[] face = new int[0];
                         int[] face1 = new int[0];
 
-                        //Determines if additional faces should be rendered
-                       // Cube b = heightMapPointList.stream().filter(cube -> cube.getX() == point3D.getX() - 1 && cube.getY() == point3D.getY() && cube.getZ() == point3D.getZ()).findFirst().orElse(null);
-                       // Cube c = heightMapPointList.stream().filter(cube -> cube.getX() == point3D.getX() + 1 && cube.getY() == point3D.getY() && cube.getZ() == point3D.getZ()).findFirst().orElse(null);
-                         boolean b =       heightMapPointList.contains(new Cube((int) point3D.getX() - 1, (int) point3D.getY(), (int) point3D.getZ()));
+                        //Determines if faces should be rendered
+                        Cube b = heightMapPointList.stream().filter(cube -> cube.getX() == point3D.getX() - 1 && cube.getY() == point3D.getY() && cube.getZ() == point3D.getZ()).findFirst().orElse(null);
+                        Cube c = heightMapPointList.stream().filter(cube -> cube.getX() == point3D.getX() + 1 && cube.getY() == point3D.getY() && cube.getZ() == point3D.getZ()).findFirst().orElse(null);
 
                         //First face set
-                        float[] t = {point3D.getX(), point3D.getY(), point3D.getZ()};
-                        if (getPointIndex(points, t) > -1)
-                            face = ArrayUtils.add(face, getPointIndex(points, t));
-                        else {
-                            points = ArrayUtils.add(points, point3D.getX());
-                            points = ArrayUtils.add(points, point3D.getY());
-                            points = ArrayUtils.add(points, point3D.getZ());
-                            face = ArrayUtils.add(face, points.length / 3 - 1);
-                        }
-                        switch (point3D.getType()) {
-                            case DEFAULT -> face = ArrayUtils.add(face, 4);
-                        }
+                        if (b == null || c == null) {
+                            float[] t = {point3D.getX(), point3D.getY(), point3D.getZ()};
+                            if (getPointIndex(points, t) > -1)
+                                face = ArrayUtils.add(face, getPointIndex(points, t));
+                            else {
+                                points = ArrayUtils.add(points, point3D.getX());
+                                points = ArrayUtils.add(points, point3D.getY());
+                                points = ArrayUtils.add(points, point3D.getZ());
+                                face = ArrayUtils.add(face, points.length / 3 - 1);
+                            }
+                            switch (point3D.getType()) {
+                                case DEFAULT -> face = ArrayUtils.add(face, 4);
+                            }
 
-                        float[] w = {point3D.getX() - 1, point3D.getY(), point3D.getZ()};
-                        if (!b) {
+                            float[] w = {point3D.getX() - 1, point3D.getY(), point3D.getZ()};
                             if (getPointIndex(points, w) > -1)
                                 face1 = ArrayUtils.add(face1, getPointIndex(points, w));
                             else {
@@ -340,21 +339,21 @@ public class Chunk extends PolygonMeshView {
                         }
 
                         //Second face set
-                        float[] t1 = {point3D.getX(), point3D.getY() - 1, point3D.getZ()};
-                        if (getPointIndex(points, t1) > -1)
-                            face = ArrayUtils.add(face, getPointIndex(points, t1));
-                        else {
-                            points = ArrayUtils.add(points, point3D.getX());
-                            points = ArrayUtils.add(points, point3D.getY() - 1);
-                            points = ArrayUtils.add(points, point3D.getZ());
-                            face = ArrayUtils.add(face, points.length / 3 - 1);
-                        }
-                        switch (point3D.getType()) {
-                            case DEFAULT -> face = ArrayUtils.add(face, 5);
-                        }
+                        if (b == null || c == null) {
+                            float[] t1 = {point3D.getX(), point3D.getY() - 1, point3D.getZ()};
+                            if (getPointIndex(points, t1) > -1)
+                                face = ArrayUtils.add(face, getPointIndex(points, t1));
+                            else {
+                                points = ArrayUtils.add(points, point3D.getX());
+                                points = ArrayUtils.add(points, point3D.getY() - 1);
+                                points = ArrayUtils.add(points, point3D.getZ());
+                                face = ArrayUtils.add(face, points.length / 3 - 1);
+                            }
+                            switch (point3D.getType()) {
+                                case DEFAULT -> face = ArrayUtils.add(face, 5);
+                            }
 
-                        float[] w1 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ()};
-                        if (!b) {
+                            float[] w1 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ()};
                             if (getPointIndex(points, w1) > -1)
                                 face1 = ArrayUtils.add(face1, getPointIndex(points, w1));
                             else {
@@ -368,22 +367,23 @@ public class Chunk extends PolygonMeshView {
                             }
                         }
 
-                        //Third face set
-                        float[] t2 = {point3D.getX(), point3D.getY() - 1, point3D.getZ() - 1};
-                        if (getPointIndex(points, t2) > -1)
-                            face = ArrayUtils.add(face, getPointIndex(points, t2));
-                        else {
-                            points = ArrayUtils.add(points, point3D.getX());
-                            points = ArrayUtils.add(points, point3D.getY() - 1);
-                            points = ArrayUtils.add(points, point3D.getZ() - 1);
-                            face = ArrayUtils.add(face, points.length / 3 - 1);
-                        }
-                        switch (point3D.getType()) {
-                            case DEFAULT -> face = ArrayUtils.add(face, 6);
-                        }
 
-                        float[] w2 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ() - 1};
-                        if (!b) {
+                        //Third face set
+                        if (b == null || c == null) {
+                            float[] t2 = {point3D.getX(), point3D.getY() - 1, point3D.getZ() - 1};
+                            if (getPointIndex(points, t2) > -1)
+                                face = ArrayUtils.add(face, getPointIndex(points, t2));
+                            else {
+                                points = ArrayUtils.add(points, point3D.getX());
+                                points = ArrayUtils.add(points, point3D.getY() - 1);
+                                points = ArrayUtils.add(points, point3D.getZ() - 1);
+                                face = ArrayUtils.add(face, points.length / 3 - 1);
+                            }
+                            switch (point3D.getType()) {
+                                case DEFAULT -> face = ArrayUtils.add(face, 6);
+                            }
+
+                            float[] w2 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ() - 1};
                             if (getPointIndex(points, w2) > -1)
                                 face1 = ArrayUtils.add(face1, getPointIndex(points, w2));
                             else {
@@ -395,25 +395,24 @@ public class Chunk extends PolygonMeshView {
                             switch (point3D.getType()) {
                                 case DEFAULT -> face1 = ArrayUtils.add(face1, 6);
                             }
-
                         }
 
                         //Fourth face set
-                        float[] t3 = {point3D.getX(), point3D.getY(), point3D.getZ() - 1};
-                        if (getPointIndex(points, t3) > -1)
-                            face = ArrayUtils.add(face, getPointIndex(points, t3));
-                        else {
-                            points = ArrayUtils.add(points, point3D.getX());
-                            points = ArrayUtils.add(points, point3D.getY());
-                            points = ArrayUtils.add(points, point3D.getZ() - 1);
-                            face = ArrayUtils.add(face, points.length / 3 - 1);
-                        }
-                        switch (point3D.getType()) {
-                            case DEFAULT -> face = ArrayUtils.add(face, 7);
-                        }
+                        if (b == null || c == null) {
+                            float[] t3 = {point3D.getX(), point3D.getY(), point3D.getZ() - 1};
+                            if (getPointIndex(points, t3) > -1)
+                                face = ArrayUtils.add(face, getPointIndex(points, t3));
+                            else {
+                                points = ArrayUtils.add(points, point3D.getX());
+                                points = ArrayUtils.add(points, point3D.getY());
+                                points = ArrayUtils.add(points, point3D.getZ() - 1);
+                                face = ArrayUtils.add(face, points.length / 3 - 1);
+                            }
+                            switch (point3D.getType()) {
+                                case DEFAULT -> face = ArrayUtils.add(face, 7);
+                            }
 
-                        float[] w3 = {point3D.getX() - 1, point3D.getY(), point3D.getZ() - 1};
-                        if (!b) {
+                            float[] w3 = {point3D.getX() - 1, point3D.getY(), point3D.getZ() - 1};
                             if (getPointIndex(points, w3) > -1)
                                 face1 = ArrayUtils.add(face1, getPointIndex(points, w3));
                             else {
@@ -427,7 +426,8 @@ public class Chunk extends PolygonMeshView {
                             }
                         }
 
-                        faces = ArrayUtils.add(faces, face);
+                        if (face.length == 8)
+                            faces = ArrayUtils.add(faces, face);
                         if (face1.length == 8)
                             faces = ArrayUtils.add(faces, face1);
                     }
@@ -438,27 +438,26 @@ public class Chunk extends PolygonMeshView {
                         int[] face = new int[0];
                         int[] face1 = new int[0];
 
-                        //Determines if additional faces should be rendered
-                       // Cube b = heightMapPointList.stream().filter(cube -> cube.getX() == point3D.getX() && cube.getY() - 1 == point3D.getY() && cube.getZ() == point3D.getZ()).findFirst().orElse(null);
-                       // Cube c = heightMapPointList.stream().filter(cube -> cube.getX() == point3D.getX()  && cube.getY() + 1 == point3D.getY() && cube.getZ() == point3D.getZ()).findFirst().orElse(null);
-                        boolean b = heightMapPointList.contains(new Cube((int) point3D.getX(), (int) point3D.getY() - 1, (int) point3D.getZ()));
+                        //Determines faces should be rendered
+                        Cube b = heightMapPointList.stream().filter(cube -> cube.getX() == point3D.getX() && cube.getY() - 1 == point3D.getY() && cube.getZ() == point3D.getZ()).findFirst().orElse(null);
+                        Cube c = heightMapPointList.stream().filter(cube -> cube.getX() == point3D.getX()  && cube.getY() + 1 == point3D.getY() && cube.getZ() == point3D.getZ()).findFirst().orElse(null);
 
                         //First face set
-                        float[] t = {point3D.getX(), point3D.getY(), point3D.getZ()};
-                        if (getPointIndex(points, t) > -1)
-                            face = ArrayUtils.add(face, getPointIndex(points, t));
-                        else {
-                            points = ArrayUtils.add(points, point3D.getX());
-                            points = ArrayUtils.add(points, point3D.getY());
-                            points = ArrayUtils.add(points, point3D.getZ());
-                            face = ArrayUtils.add(face, points.length / 3 - 1);
-                        }
-                        switch (point3D.getType()) {
-                            case DEFAULT -> face = ArrayUtils.add(face, 4);
-                        }
+                        if (b == null || c == null) {
+                            float[] t = {point3D.getX(), point3D.getY(), point3D.getZ()};
+                            if (getPointIndex(points, t) > -1)
+                                face = ArrayUtils.add(face, getPointIndex(points, t));
+                            else {
+                                points = ArrayUtils.add(points, point3D.getX());
+                                points = ArrayUtils.add(points, point3D.getY());
+                                points = ArrayUtils.add(points, point3D.getZ());
+                                face = ArrayUtils.add(face, points.length / 3 - 1);
+                            }
+                            switch (point3D.getType()) {
+                                case DEFAULT -> face = ArrayUtils.add(face, 4);
+                            }
 
-                        float[] w = {point3D.getX(), point3D.getY() - 1, point3D.getZ()};
-                        if (!b) {
+                            float[] w = {point3D.getX(), point3D.getY() - 1, point3D.getZ()};
                             if (getPointIndex(points, w) > -1)
                                 face1 = ArrayUtils.add(face1, getPointIndex(points, w));
                             else {
@@ -472,22 +471,23 @@ public class Chunk extends PolygonMeshView {
                             }
                         }
 
-                        //Second face set
-                        float[] t1 = {point3D.getX() - 1, point3D.getY(), point3D.getZ()};
-                        if (getPointIndex(points, t1) > -1)
-                            face = ArrayUtils.add(face, getPointIndex(points, t1));
-                        else {
-                            points = ArrayUtils.add(points, point3D.getX() - 1);
-                            points = ArrayUtils.add(points, point3D.getY());
-                            points = ArrayUtils.add(points, point3D.getZ());
-                            face = ArrayUtils.add(face, points.length / 3 - 1);
-                        }
-                        switch (point3D.getType()) {
-                            case DEFAULT -> face = ArrayUtils.add(face, 5);
-                        }
 
-                        float[] w1 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ()};
-                        if (!b) {
+                        //Second face set
+                        if (b == null || c == null) {
+                            float[] t1 = {point3D.getX() - 1, point3D.getY(), point3D.getZ()};
+                            if (getPointIndex(points, t1) > -1)
+                                face = ArrayUtils.add(face, getPointIndex(points, t1));
+                            else {
+                                points = ArrayUtils.add(points, point3D.getX() - 1);
+                                points = ArrayUtils.add(points, point3D.getY());
+                                points = ArrayUtils.add(points, point3D.getZ());
+                                face = ArrayUtils.add(face, points.length / 3 - 1);
+                            }
+                            switch (point3D.getType()) {
+                                case DEFAULT -> face = ArrayUtils.add(face, 5);
+                            }
+
+                            float[] w1 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ()};
                             if (getPointIndex(points, w1) > -1)
                                 face1 = ArrayUtils.add(face1, getPointIndex(points, w1));
                             else {
@@ -503,21 +503,21 @@ public class Chunk extends PolygonMeshView {
 
 
                         //Third face set
-                        float[] t2 = {point3D.getX() - 1, point3D.getY(), point3D.getZ() - 1};
-                        if (getPointIndex(points, t2) > -1)
-                            face = ArrayUtils.add(face, getPointIndex(points, t2));
-                        else {
-                            points = ArrayUtils.add(points, point3D.getX() - 1);
-                            points = ArrayUtils.add(points, point3D.getY());
-                            points = ArrayUtils.add(points, point3D.getZ() - 1);
-                            face = ArrayUtils.add(face, points.length / 3 - 1);
-                        }
-                        switch (point3D.getType()) {
-                            case DEFAULT -> face = ArrayUtils.add(face, 6);
-                        }
+                        if (b == null || c == null) {
+                            float[] t2 = {point3D.getX() - 1, point3D.getY(), point3D.getZ() - 1};
+                            if (getPointIndex(points, t2) > -1)
+                                face = ArrayUtils.add(face, getPointIndex(points, t2));
+                            else {
+                                points = ArrayUtils.add(points, point3D.getX() - 1);
+                                points = ArrayUtils.add(points, point3D.getY());
+                                points = ArrayUtils.add(points, point3D.getZ() - 1);
+                                face = ArrayUtils.add(face, points.length / 3 - 1);
+                            }
+                            switch (point3D.getType()) {
+                                case DEFAULT -> face = ArrayUtils.add(face, 6);
+                            }
 
-                        float[] w2 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ() - 1};
-                        if (!b) {
+                            float[] w2 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ() - 1};
                             if (getPointIndex(points, w2) > -1)
                                 face1 = ArrayUtils.add(face1, getPointIndex(points, w2));
                             else {
@@ -532,21 +532,21 @@ public class Chunk extends PolygonMeshView {
                         }
 
                         //Fourth face set
-                        float[] t3 = {point3D.getX(), point3D.getY(), point3D.getZ() - 1};
-                        if (getPointIndex(points, t3) > -1)
-                            face = ArrayUtils.add(face, getPointIndex(points, t3));
-                        else {
-                            points = ArrayUtils.add(points, point3D.getX());
-                            points = ArrayUtils.add(points, point3D.getY());
-                            points = ArrayUtils.add(points, point3D.getZ() - 1);
-                            face = ArrayUtils.add(face, points.length / 3 - 1);
-                        }
-                        switch (point3D.getType()) {
-                            case DEFAULT -> face = ArrayUtils.add(face, 7);
-                        }
+                        if (b == null || c == null) {
+                            float[] t3 = {point3D.getX(), point3D.getY(), point3D.getZ() - 1};
+                            if (getPointIndex(points, t3) > -1)
+                                face = ArrayUtils.add(face, getPointIndex(points, t3));
+                            else {
+                                points = ArrayUtils.add(points, point3D.getX());
+                                points = ArrayUtils.add(points, point3D.getY());
+                                points = ArrayUtils.add(points, point3D.getZ() - 1);
+                                face = ArrayUtils.add(face, points.length / 3 - 1);
+                            }
+                            switch (point3D.getType()) {
+                                case DEFAULT -> face = ArrayUtils.add(face, 7);
+                            }
 
-                        float[] w3 = {point3D.getX(), point3D.getY() - 1, point3D.getZ() - 1};
-                        if (!b) {
+                            float[] w3 = {point3D.getX(), point3D.getY() - 1, point3D.getZ() - 1};
                             if (getPointIndex(points, w3) > -1)
                                 face1 = ArrayUtils.add(face1, getPointIndex(points, w3));
                             else {
@@ -560,7 +560,8 @@ public class Chunk extends PolygonMeshView {
                             }
                         }
 
-                        faces = ArrayUtils.add(faces, face);
+                        if (face.length == 8)
+                            faces = ArrayUtils.add(faces, face);
                         if (face1.length == 8)
                             faces = ArrayUtils.add(faces, face1);
                     }
