@@ -96,10 +96,7 @@ public class ChunkManager extends GlueList<Chunk> {
                 Platform.runLater(() -> {
                     if (!contains(chunk)) {
                         add(chunk);
-
-                        Thread t = new Thread(chunk::updateMesh);
-                        t.setDaemon(true);
-                        MainApplication.executor.execute(t);
+                        chunk.updateMesh();
                     }
 
                     if (!world.getChildren().contains(chunk))

@@ -182,160 +182,72 @@ public class Chunk extends PolygonMeshView {
      * Also removes and adds points to mesh based on player actions post-chunk creation.
      */
     public void updateMesh() {
-        if (cubes.size() > 0 && didChange) {
+        Thread t = new Thread(() -> {
+            if (cubes.size() > 0 && didChange) {
 
-            //Defining block texture atlas
-            PhongMaterial mat = new PhongMaterial();
+                //Defining block texture atlas
+                PhongMaterial mat = new PhongMaterial();
 
-            if (textures != null && mat.getDiffuseMap() != textures.getImage())
-                mat.setDiffuseMap(textures.getImage());
-            else {
-                System.out.println("Null Textures");
-                System.exit(0);
-            }
-
-            /*===============================================
-                 Texture coordinates for mesh section
-             ================================================*/
-            TextureRegion grass_top = textures.getRegion("grass_top");
-            TextureRegion grass_side = textures.getRegion("grass_side");
-            float[] texCoords = {
-                    (float) grass_top.getTextureCoordinates(0, 0)[0], (float) grass_top.getTextureCoordinates(0, 0)[1],
-                    (float) grass_top.getTextureCoordinates(0, 256)[0], (float) grass_top.getTextureCoordinates(0, 256)[1],
-                    (float) grass_top.getTextureCoordinates(256, 256)[0], (float) grass_top.getTextureCoordinates(256, 256)[1],
-                    (float) grass_top.getTextureCoordinates(256, 0)[0], (float) grass_top.getTextureCoordinates(256, 0)[1],
-
-                    (float) grass_side.getTextureCoordinates(0, 0)[0], (float) grass_side.getTextureCoordinates(0, 0)[1],
-                    (float) grass_side.getTextureCoordinates(0, 256)[0], (float) grass_side.getTextureCoordinates(0, 256)[1],
-                    (float) grass_side.getTextureCoordinates(256, 256)[0], (float) grass_side.getTextureCoordinates(256, 256)[1],
-                    (float) grass_side.getTextureCoordinates(256, 0)[0], (float) grass_side.getTextureCoordinates(256, 0)[1],
-
-            };
-
-            float[] points = new float[0];
-            int[][] faces = new int[0][0];
-
-            List<Cube> cList = getInterpolatedCubes();
-            for (Cube c : cList) {
-                if (!heightMapPointList.contains(c))
-                    heightMapPointList.add(c);
-            }
-
-            /*===================================
-              Rendering Z Axis Faces
-            ==================================*/
-            for (int i = 0; i < CHUNK_HEIGHT; i++) {
-                float finalI = i;
-                List<Cube> p = heightMapPointList.stream().filter(q -> q.getZ() == finalI).toList();
-
-
-                if (!p.isEmpty()) {
-                    for (Point3D point3D : p) {
-                        int[] face = new int[0];
-
-                        //First face point 0
-                        float[] t = {point3D.getX(), point3D.getY(), point3D.getZ()};
-                        if (getPointIndex(points, t) > -1)
-                            face = ArrayUtils.add(face, getPointIndex(points, t));
-                        else {
-                            points = ArrayUtils.add(points, point3D.getX());
-                            points = ArrayUtils.add(points, point3D.getY());
-                            points = ArrayUtils.add(points, point3D.getZ());
-                            face = ArrayUtils.add(face, points.length / 3 - 1);
-                        }
-                        face = ArrayUtils.add(face, 0);
-
-                        //Second face point 1
-                        float[] t1 = {point3D.getX(), point3D.getY() - 1, point3D.getZ()};
-                        if (getPointIndex(points, t1) > -1)
-                            face = ArrayUtils.add(face, getPointIndex(points, t1));
-                        else {
-                            points = ArrayUtils.add(points, point3D.getX());
-                            points = ArrayUtils.add(points, point3D.getY() - 1);
-                            points = ArrayUtils.add(points, point3D.getZ());
-                            face = ArrayUtils.add(face, points.length / 3 - 1);
-                        }
-                        face = ArrayUtils.add(face, 1);
-
-
-                        //Third face point 2
-                        float[] t2 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ()};
-                        if (getPointIndex(points, t2) > -1)
-                            face = ArrayUtils.add(face, getPointIndex(points, t2));
-                        else {
-                            points = ArrayUtils.add(points, point3D.getX() - 1);
-                            points = ArrayUtils.add(points, point3D.getY() - 1);
-                            points = ArrayUtils.add(points, point3D.getZ());
-                            face = ArrayUtils.add(face, points.length / 3 - 1);
-                        }
-                        face = ArrayUtils.add(face, 2);
-
-
-                        //Fourth face point 3
-                        float[] t3 = {point3D.getX() - 1, point3D.getY(), point3D.getZ()};
-                        if (getPointIndex(points, t3) > -1)
-                            face = ArrayUtils.add(face, getPointIndex(points, t3));
-                        else {
-                            points = ArrayUtils.add(points, point3D.getX() - 1);
-                            points = ArrayUtils.add(points, point3D.getY());
-                            points = ArrayUtils.add(points, point3D.getZ());
-                            face = ArrayUtils.add(face, points.length / 3 - 1);
-                        }
-                        face = ArrayUtils.add(face, 3);
-                        faces = ArrayUtils.add(faces, face);
-                    }
+                if (textures != null && mat.getDiffuseMap() != textures.getImage())
+                    mat.setDiffuseMap(textures.getImage());
+                else {
+                    System.out.println("Null Textures");
+                    System.exit(0);
                 }
-            }
-            /*===================================
-              Rendering X and Y Axis Faces
-            ==================================*/
-            for (int i = 0; i < CHUNK_BOUNDS; i++) {
-                float finalI = i;
 
-                List<Cube> x = heightMapPointList.stream().filter(q -> q.getX() == (getLocation().getX() + finalI)).toList();
-                List<Cube> y = heightMapPointList.stream().filter(q -> q.getY() == (getLocation().getY() + finalI)).toList();
+        /*===============================================
+             Texture coordinates for mesh section
+         ================================================*/
+                TextureRegion grass_top = textures.getRegion("grass_top");
+                TextureRegion grass_side = textures.getRegion("grass_side");
+                float[] texCoords = {
+                        (float) grass_top.getTextureCoordinates(0, 0)[0], (float) grass_top.getTextureCoordinates(0, 0)[1],
+                        (float) grass_top.getTextureCoordinates(0, 256)[0], (float) grass_top.getTextureCoordinates(0, 256)[1],
+                        (float) grass_top.getTextureCoordinates(256, 256)[0], (float) grass_top.getTextureCoordinates(256, 256)[1],
+                        (float) grass_top.getTextureCoordinates(256, 0)[0], (float) grass_top.getTextureCoordinates(256, 0)[1],
 
-                if (!x.isEmpty()) {
-                    for (Cube point3D : x) {
-                        int[] face = new int[0];
-                        int[] face1 = new int[0];
+                        (float) grass_side.getTextureCoordinates(0, 0)[0], (float) grass_side.getTextureCoordinates(0, 0)[1],
+                        (float) grass_side.getTextureCoordinates(0, 256)[0], (float) grass_side.getTextureCoordinates(0, 256)[1],
+                        (float) grass_side.getTextureCoordinates(256, 256)[0], (float) grass_side.getTextureCoordinates(256, 256)[1],
+                        (float) grass_side.getTextureCoordinates(256, 0)[0], (float) grass_side.getTextureCoordinates(256, 0)[1],
 
-                        //Determines if faces should be added to mesh
-                        int base = (int) point3D.getZ();
-                        int plus1 = getGlobalHeightMapValue((int) point3D.getX() + 1, (int) point3D.getY());
-                        int minus1 = getGlobalHeightMapValue((int) point3D.getX() - 1, (int) point3D.getY());
+                };
 
-                        //First face set
-                        if (plus1 != base || minus1 != base) {
-                            float[] t = {point3D.getX(), point3D.getY(), point3D.getZ()};
-                            if (getPointIndex(points, t) > -1)
-                                face = ArrayUtils.add(face, getPointIndex(points, t));
+                float[] points = new float[0];
+                int[][] faces = new int[0][0];
+
+
+                List<Cube> cList = getInterpolatedCubes();
+                for (Cube c : cList) {
+                    if (!heightMapPointList.contains(c))
+                        heightMapPointList.add(c);
+                }
+
+        /*===================================
+          Rendering Z Axis Faces
+        ==================================*/
+                for (int i = 0; i < CHUNK_HEIGHT; i++) {
+                    float finalI = i;
+                    List<Cube> p = heightMapPointList.stream().filter(q -> q.getZ() == finalI).toList();
+
+
+                    if (!p.isEmpty()) {
+                        for (Point3D point3D : p) {
+                            int[] face = new int[0];
+
+                            //First face point 0
+                            float[] t12 = {point3D.getX(), point3D.getY(), point3D.getZ()};
+                            if (getPointIndex(points, t12) > -1)
+                                face = ArrayUtils.add(face, getPointIndex(points, t12));
                             else {
                                 points = ArrayUtils.add(points, point3D.getX());
                                 points = ArrayUtils.add(points, point3D.getY());
                                 points = ArrayUtils.add(points, point3D.getZ());
                                 face = ArrayUtils.add(face, points.length / 3 - 1);
                             }
+                            face = ArrayUtils.add(face, 0);
 
-                            float[] w = {point3D.getX() - 1, point3D.getY(), point3D.getZ()};
-                            if (getPointIndex(points, w) > -1)
-                                face1 = ArrayUtils.add(face1, getPointIndex(points, w));
-                            else {
-                                points = ArrayUtils.add(points, point3D.getX() - 1);
-                                points = ArrayUtils.add(points, point3D.getY());
-                                points = ArrayUtils.add(points, point3D.getZ());
-                                face1 = ArrayUtils.add(face1, points.length / 3 - 1);
-                            }
-                            switch (point3D.getType()) {
-                                case DEFAULT -> {
-                                    face1 = ArrayUtils.add(face1, 4);
-                                    face = ArrayUtils.add(face, 4);
-                                }
-                            }
-                        }
-
-                        //Second face set
-                        if (plus1 != base || minus1 != base) {
+                            //Second face point 1
                             float[] t1 = {point3D.getX(), point3D.getY() - 1, point3D.getZ()};
                             if (getPointIndex(points, t1) > -1)
                                 face = ArrayUtils.add(face, getPointIndex(points, t1));
@@ -345,237 +257,330 @@ public class Chunk extends PolygonMeshView {
                                 points = ArrayUtils.add(points, point3D.getZ());
                                 face = ArrayUtils.add(face, points.length / 3 - 1);
                             }
-
-                            float[] w1 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ()};
-                            if (getPointIndex(points, w1) > -1)
-                                face1 = ArrayUtils.add(face1, getPointIndex(points, w1));
-                            else {
-                                points = ArrayUtils.add(points, point3D.getX() - 1);
-                                points = ArrayUtils.add(points, point3D.getY() - 1);
-                                points = ArrayUtils.add(points, point3D.getZ());
-                                face1 = ArrayUtils.add(face1, points.length / 3 - 1);
-                            }
-                            switch (point3D.getType()) {
-                                case DEFAULT -> {
-                                    face1 = ArrayUtils.add(face1, 5);
-                                    face = ArrayUtils.add(face, 5);
-                                }
-                            }
-                        }
+                            face = ArrayUtils.add(face, 1);
 
 
-                        //Third face set
-                        if (plus1 != base || minus1 != base) {
-                            float[] t2 = {point3D.getX(), point3D.getY() - 1, point3D.getZ() - 1};
-                            if (getPointIndex(points, t2) > -1)
-                                face = ArrayUtils.add(face, getPointIndex(points, t2));
-                            else {
-                                points = ArrayUtils.add(points, point3D.getX());
-                                points = ArrayUtils.add(points, point3D.getY() - 1);
-                                points = ArrayUtils.add(points, point3D.getZ() - 1);
-                                face = ArrayUtils.add(face, points.length / 3 - 1);
-                            }
-
-                            float[] w2 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ() - 1};
-                            if (getPointIndex(points, w2) > -1)
-                                face1 = ArrayUtils.add(face1, getPointIndex(points, w2));
-                            else {
-                                points = ArrayUtils.add(points, point3D.getX() - 1);
-                                points = ArrayUtils.add(points, point3D.getY() - 1);
-                                points = ArrayUtils.add(points, point3D.getZ() - 1);
-                                face1 = ArrayUtils.add(face1, points.length / 3 - 1);
-                            }
-                            switch (point3D.getType()) {
-                                case DEFAULT -> {
-                                    face1 = ArrayUtils.add(face1, 6);
-                                    face = ArrayUtils.add(face, 6);
-                                }
-                            }
-                        }
-
-                        //Fourth face set
-                        if (plus1 != base || minus1 != base) {
-                            float[] t3 = {point3D.getX(), point3D.getY(), point3D.getZ() - 1};
-                            if (getPointIndex(points, t3) > -1)
-                                face = ArrayUtils.add(face, getPointIndex(points, t3));
-                            else {
-                                points = ArrayUtils.add(points, point3D.getX());
-                                points = ArrayUtils.add(points, point3D.getY());
-                                points = ArrayUtils.add(points, point3D.getZ() - 1);
-                                face = ArrayUtils.add(face, points.length / 3 - 1);
-                            }
-
-                            float[] w3 = {point3D.getX() - 1, point3D.getY(), point3D.getZ() - 1};
-                            if (getPointIndex(points, w3) > -1)
-                                face1 = ArrayUtils.add(face1, getPointIndex(points, w3));
-                            else {
-                                points = ArrayUtils.add(points, point3D.getX() - 1);
-                                points = ArrayUtils.add(points, point3D.getY());
-                                points = ArrayUtils.add(points, point3D.getZ() - 1);
-                                face1 = ArrayUtils.add(face1, points.length / 3 - 1);
-                            }
-                            switch (point3D.getType()) {
-                                case DEFAULT -> {
-                                    face1 = ArrayUtils.add(face1, 7);
-                                    face = ArrayUtils.add(face, 7);
-                                }
-                            }
-                        }
-
-                        if (face.length == 8)
-                            faces = ArrayUtils.add(faces, face);
-                        if (face1.length == 8)
-                            faces = ArrayUtils.add(faces, face1);
-                    }
-                }
-
-                if (!y.isEmpty()) {
-                    for (Cube point3D : y) {
-                        int[] face = new int[0];
-                        int[] face1 = new int[0];
-
-                        //Determines faces should be rendered
-                        double base = point3D.getZ();
-                        double plus1 = getGlobalHeightMapValue((int) point3D.getX(), (int) point3D.getY() + 1);
-                        double minus1 = getGlobalHeightMapValue((int) point3D.getX(), (int) point3D.getY() - 1);
-
-                        //First face set
-                        if (plus1 != base || minus1 != base) {
-                            float[] t = {point3D.getX(), point3D.getY(), point3D.getZ()};
-                            if (getPointIndex(points, t) > -1)
-                                face = ArrayUtils.add(face, getPointIndex(points, t));
-                            else {
-                                points = ArrayUtils.add(points, point3D.getX());
-                                points = ArrayUtils.add(points, point3D.getY());
-                                points = ArrayUtils.add(points, point3D.getZ());
-                                face = ArrayUtils.add(face, points.length / 3 - 1);
-                            }
-
-                            float[] w = {point3D.getX(), point3D.getY() - 1, point3D.getZ()};
-                            if (getPointIndex(points, w) > -1)
-                                face1 = ArrayUtils.add(face1, getPointIndex(points, w));
-                            else {
-                                points = ArrayUtils.add(points, point3D.getX());
-                                points = ArrayUtils.add(points, point3D.getY() - 1);
-                                points = ArrayUtils.add(points, point3D.getZ());
-                                face1 = ArrayUtils.add(face1, points.length / 3 - 1);
-                            }
-                            switch (point3D.getType()) {
-                                case DEFAULT -> {
-                                    face1 = ArrayUtils.add(face1, 4);
-                                    face = ArrayUtils.add(face, 4);
-                                }
-                            }
-                        }
-
-
-                        //Second face set
-                        if (plus1 != base || minus1 != base) {
-                            float[] t1 = {point3D.getX() - 1, point3D.getY(), point3D.getZ()};
-                            if (getPointIndex(points, t1) > -1)
-                                face = ArrayUtils.add(face, getPointIndex(points, t1));
-                            else {
-                                points = ArrayUtils.add(points, point3D.getX() - 1);
-                                points = ArrayUtils.add(points, point3D.getY());
-                                points = ArrayUtils.add(points, point3D.getZ());
-                                face = ArrayUtils.add(face, points.length / 3 - 1);
-                            }
-
-                            float[] w1 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ()};
-                            if (getPointIndex(points, w1) > -1)
-                                face1 = ArrayUtils.add(face1, getPointIndex(points, w1));
-                            else {
-                                points = ArrayUtils.add(points, point3D.getX() - 1);
-                                points = ArrayUtils.add(points, point3D.getY() - 1);
-                                points = ArrayUtils.add(points, point3D.getZ());
-                                face1 = ArrayUtils.add(face1, points.length / 3 - 1);
-                            }
-                            switch (point3D.getType()) {
-                                case DEFAULT -> {
-                                    face1 = ArrayUtils.add(face1, 5);
-                                    face = ArrayUtils.add(face, 5);
-                                }
-                            }
-                        }
-
-
-                        //Third face set
-                        if (plus1 != base || minus1 != base) {
-                            float[] t2 = {point3D.getX() - 1, point3D.getY(), point3D.getZ() - 1};
+                            //Third face point 2
+                            float[] t2 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ()};
                             if (getPointIndex(points, t2) > -1)
                                 face = ArrayUtils.add(face, getPointIndex(points, t2));
                             else {
                                 points = ArrayUtils.add(points, point3D.getX() - 1);
-                                points = ArrayUtils.add(points, point3D.getY());
-                                points = ArrayUtils.add(points, point3D.getZ() - 1);
+                                points = ArrayUtils.add(points, point3D.getY() - 1);
+                                points = ArrayUtils.add(points, point3D.getZ());
                                 face = ArrayUtils.add(face, points.length / 3 - 1);
                             }
+                            face = ArrayUtils.add(face, 2);
 
-                            float[] w2 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ() - 1};
-                            if (getPointIndex(points, w2) > -1)
-                                face1 = ArrayUtils.add(face1, getPointIndex(points, w2));
-                            else {
-                                points = ArrayUtils.add(points, point3D.getX() - 1);
-                                points = ArrayUtils.add(points, point3D.getY() - 1);
-                                points = ArrayUtils.add(points, point3D.getZ() - 1);
-                                face1 = ArrayUtils.add(face1, points.length / 3 - 1);
-                            }
-                            switch (point3D.getType()) {
-                                case DEFAULT -> {
-                                    face1 = ArrayUtils.add(face1, 6);
-                                    face = ArrayUtils.add(face, 6);
-                                }
-                            }
-                        }
 
-                        //Fourth face set
-                        if (plus1 != base || minus1 != base) {
-                            float[] t3 = {point3D.getX(), point3D.getY(), point3D.getZ() - 1};
+                            //Fourth face point 3
+                            float[] t3 = {point3D.getX() - 1, point3D.getY(), point3D.getZ()};
                             if (getPointIndex(points, t3) > -1)
                                 face = ArrayUtils.add(face, getPointIndex(points, t3));
                             else {
-                                points = ArrayUtils.add(points, point3D.getX());
+                                points = ArrayUtils.add(points, point3D.getX() - 1);
                                 points = ArrayUtils.add(points, point3D.getY());
-                                points = ArrayUtils.add(points, point3D.getZ() - 1);
+                                points = ArrayUtils.add(points, point3D.getZ());
                                 face = ArrayUtils.add(face, points.length / 3 - 1);
                             }
-
-                            float[] w3 = {point3D.getX(), point3D.getY() - 1, point3D.getZ() - 1};
-                            if (getPointIndex(points, w3) > -1)
-                                face1 = ArrayUtils.add(face1, getPointIndex(points, w3));
-                            else {
-                                points = ArrayUtils.add(points, point3D.getX());
-                                points = ArrayUtils.add(points, point3D.getY() - 1);
-                                points = ArrayUtils.add(points, point3D.getZ() - 1);
-                                face1 = ArrayUtils.add(face1, points.length / 3 - 1);
-                            }
-                            switch (point3D.getType()) {
-                                case DEFAULT -> {
-                                    face1 = ArrayUtils.add(face1, 7);
-                                    face = ArrayUtils.add(face, 7);
-                                }
-                            }
-                        }
-
-                        if (face.length == 8)
+                            face = ArrayUtils.add(face, 3);
                             faces = ArrayUtils.add(faces, face);
-                        if (face1.length == 8)
-                            faces = ArrayUtils.add(faces, face1);
+                        }
                     }
                 }
+        /*===================================
+          Rendering X and Y Axis Faces
+        ==================================*/
+                for (int i = 0; i < CHUNK_BOUNDS; i++) {
+                    float finalI = i;
+
+                    List<Cube> x = heightMapPointList.stream().filter(q -> q.getX() == (getLocation().getX() + finalI)).toList();
+                    List<Cube> y = heightMapPointList.stream().filter(q -> q.getY() == (getLocation().getY() + finalI)).toList();
+
+                    if (!x.isEmpty()) {
+                        for (Cube point3D : x) {
+                            int[] face = new int[0];
+                            int[] face1 = new int[0];
+
+                            //Determines if faces should be added to mesh
+                            int base = (int) point3D.getZ();
+                            int plus1 = getGlobalHeightMapValue((int) point3D.getX() + 1, (int) point3D.getY());
+                            int minus1 = getGlobalHeightMapValue((int) point3D.getX() - 1, (int) point3D.getY());
+
+                            //First face set
+                            if (plus1 != base || minus1 != base) {
+                                float[] t12 = {point3D.getX(), point3D.getY(), point3D.getZ()};
+                                if (getPointIndex(points, t12) > -1)
+                                    face = ArrayUtils.add(face, getPointIndex(points, t12));
+                                else {
+                                    points = ArrayUtils.add(points, point3D.getX());
+                                    points = ArrayUtils.add(points, point3D.getY());
+                                    points = ArrayUtils.add(points, point3D.getZ());
+                                    face = ArrayUtils.add(face, points.length / 3 - 1);
+                                }
+
+                                float[] w = {point3D.getX() - 1, point3D.getY(), point3D.getZ()};
+                                if (getPointIndex(points, w) > -1)
+                                    face1 = ArrayUtils.add(face1, getPointIndex(points, w));
+                                else {
+                                    points = ArrayUtils.add(points, point3D.getX() - 1);
+                                    points = ArrayUtils.add(points, point3D.getY());
+                                    points = ArrayUtils.add(points, point3D.getZ());
+                                    face1 = ArrayUtils.add(face1, points.length / 3 - 1);
+                                }
+                                switch (point3D.getType()) {
+                                    case DEFAULT -> {
+                                        face1 = ArrayUtils.add(face1, 4);
+                                        face = ArrayUtils.add(face, 4);
+                                    }
+                                }
+                            }
+
+                            //Second face set
+                            if (plus1 != base || minus1 != base) {
+                                float[] t1 = {point3D.getX(), point3D.getY() - 1, point3D.getZ()};
+                                if (getPointIndex(points, t1) > -1)
+                                    face = ArrayUtils.add(face, getPointIndex(points, t1));
+                                else {
+                                    points = ArrayUtils.add(points, point3D.getX());
+                                    points = ArrayUtils.add(points, point3D.getY() - 1);
+                                    points = ArrayUtils.add(points, point3D.getZ());
+                                    face = ArrayUtils.add(face, points.length / 3 - 1);
+                                }
+
+                                float[] w1 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ()};
+                                if (getPointIndex(points, w1) > -1)
+                                    face1 = ArrayUtils.add(face1, getPointIndex(points, w1));
+                                else {
+                                    points = ArrayUtils.add(points, point3D.getX() - 1);
+                                    points = ArrayUtils.add(points, point3D.getY() - 1);
+                                    points = ArrayUtils.add(points, point3D.getZ());
+                                    face1 = ArrayUtils.add(face1, points.length / 3 - 1);
+                                }
+                                switch (point3D.getType()) {
+                                    case DEFAULT -> {
+                                        face1 = ArrayUtils.add(face1, 5);
+                                        face = ArrayUtils.add(face, 5);
+                                    }
+                                }
+                            }
+
+
+                            //Third face set
+                            if (plus1 != base || minus1 != base) {
+                                float[] t2 = {point3D.getX(), point3D.getY() - 1, point3D.getZ() - 1};
+                                if (getPointIndex(points, t2) > -1)
+                                    face = ArrayUtils.add(face, getPointIndex(points, t2));
+                                else {
+                                    points = ArrayUtils.add(points, point3D.getX());
+                                    points = ArrayUtils.add(points, point3D.getY() - 1);
+                                    points = ArrayUtils.add(points, point3D.getZ() - 1);
+                                    face = ArrayUtils.add(face, points.length / 3 - 1);
+                                }
+
+                                float[] w2 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ() - 1};
+                                if (getPointIndex(points, w2) > -1)
+                                    face1 = ArrayUtils.add(face1, getPointIndex(points, w2));
+                                else {
+                                    points = ArrayUtils.add(points, point3D.getX() - 1);
+                                    points = ArrayUtils.add(points, point3D.getY() - 1);
+                                    points = ArrayUtils.add(points, point3D.getZ() - 1);
+                                    face1 = ArrayUtils.add(face1, points.length / 3 - 1);
+                                }
+                                switch (point3D.getType()) {
+                                    case DEFAULT -> {
+                                        face1 = ArrayUtils.add(face1, 6);
+                                        face = ArrayUtils.add(face, 6);
+                                    }
+                                }
+                            }
+
+                            //Fourth face set
+                            if (plus1 != base || minus1 != base) {
+                                float[] t3 = {point3D.getX(), point3D.getY(), point3D.getZ() - 1};
+                                if (getPointIndex(points, t3) > -1)
+                                    face = ArrayUtils.add(face, getPointIndex(points, t3));
+                                else {
+                                    points = ArrayUtils.add(points, point3D.getX());
+                                    points = ArrayUtils.add(points, point3D.getY());
+                                    points = ArrayUtils.add(points, point3D.getZ() - 1);
+                                    face = ArrayUtils.add(face, points.length / 3 - 1);
+                                }
+
+                                float[] w3 = {point3D.getX() - 1, point3D.getY(), point3D.getZ() - 1};
+                                if (getPointIndex(points, w3) > -1)
+                                    face1 = ArrayUtils.add(face1, getPointIndex(points, w3));
+                                else {
+                                    points = ArrayUtils.add(points, point3D.getX() - 1);
+                                    points = ArrayUtils.add(points, point3D.getY());
+                                    points = ArrayUtils.add(points, point3D.getZ() - 1);
+                                    face1 = ArrayUtils.add(face1, points.length / 3 - 1);
+                                }
+                                switch (point3D.getType()) {
+                                    case DEFAULT -> {
+                                        face1 = ArrayUtils.add(face1, 7);
+                                        face = ArrayUtils.add(face, 7);
+                                    }
+                                }
+                            }
+
+                            if (face.length == 8)
+                                faces = ArrayUtils.add(faces, face);
+                            if (face1.length == 8)
+                                faces = ArrayUtils.add(faces, face1);
+                        }
+                    }
+
+                    if (!y.isEmpty()) {
+                        for (Cube point3D : y) {
+                            int[] face = new int[0];
+                            int[] face1 = new int[0];
+
+                            //Determines faces should be rendered
+                            double base = point3D.getZ();
+                            double plus1 = getGlobalHeightMapValue((int) point3D.getX(), (int) point3D.getY() + 1);
+                            double minus1 = getGlobalHeightMapValue((int) point3D.getX(), (int) point3D.getY() - 1);
+
+                            //First face set
+                            if (plus1 != base || minus1 != base) {
+                                float[] t12 = {point3D.getX(), point3D.getY(), point3D.getZ()};
+                                if (getPointIndex(points, t12) > -1)
+                                    face = ArrayUtils.add(face, getPointIndex(points, t12));
+                                else {
+                                    points = ArrayUtils.add(points, point3D.getX());
+                                    points = ArrayUtils.add(points, point3D.getY());
+                                    points = ArrayUtils.add(points, point3D.getZ());
+                                    face = ArrayUtils.add(face, points.length / 3 - 1);
+                                }
+
+                                float[] w = {point3D.getX(), point3D.getY() - 1, point3D.getZ()};
+                                if (getPointIndex(points, w) > -1)
+                                    face1 = ArrayUtils.add(face1, getPointIndex(points, w));
+                                else {
+                                    points = ArrayUtils.add(points, point3D.getX());
+                                    points = ArrayUtils.add(points, point3D.getY() - 1);
+                                    points = ArrayUtils.add(points, point3D.getZ());
+                                    face1 = ArrayUtils.add(face1, points.length / 3 - 1);
+                                }
+                                switch (point3D.getType()) {
+                                    case DEFAULT -> {
+                                        face1 = ArrayUtils.add(face1, 4);
+                                        face = ArrayUtils.add(face, 4);
+                                    }
+                                }
+                            }
+
+
+                            //Second face set
+                            if (plus1 != base || minus1 != base) {
+                                float[] t1 = {point3D.getX() - 1, point3D.getY(), point3D.getZ()};
+                                if (getPointIndex(points, t1) > -1)
+                                    face = ArrayUtils.add(face, getPointIndex(points, t1));
+                                else {
+                                    points = ArrayUtils.add(points, point3D.getX() - 1);
+                                    points = ArrayUtils.add(points, point3D.getY());
+                                    points = ArrayUtils.add(points, point3D.getZ());
+                                    face = ArrayUtils.add(face, points.length / 3 - 1);
+                                }
+
+                                float[] w1 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ()};
+                                if (getPointIndex(points, w1) > -1)
+                                    face1 = ArrayUtils.add(face1, getPointIndex(points, w1));
+                                else {
+                                    points = ArrayUtils.add(points, point3D.getX() - 1);
+                                    points = ArrayUtils.add(points, point3D.getY() - 1);
+                                    points = ArrayUtils.add(points, point3D.getZ());
+                                    face1 = ArrayUtils.add(face1, points.length / 3 - 1);
+                                }
+                                switch (point3D.getType()) {
+                                    case DEFAULT -> {
+                                        face1 = ArrayUtils.add(face1, 5);
+                                        face = ArrayUtils.add(face, 5);
+                                    }
+                                }
+                            }
+
+
+                            //Third face set
+                            if (plus1 != base || minus1 != base) {
+                                float[] t2 = {point3D.getX() - 1, point3D.getY(), point3D.getZ() - 1};
+                                if (getPointIndex(points, t2) > -1)
+                                    face = ArrayUtils.add(face, getPointIndex(points, t2));
+                                else {
+                                    points = ArrayUtils.add(points, point3D.getX() - 1);
+                                    points = ArrayUtils.add(points, point3D.getY());
+                                    points = ArrayUtils.add(points, point3D.getZ() - 1);
+                                    face = ArrayUtils.add(face, points.length / 3 - 1);
+                                }
+
+                                float[] w2 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ() - 1};
+                                if (getPointIndex(points, w2) > -1)
+                                    face1 = ArrayUtils.add(face1, getPointIndex(points, w2));
+                                else {
+                                    points = ArrayUtils.add(points, point3D.getX() - 1);
+                                    points = ArrayUtils.add(points, point3D.getY() - 1);
+                                    points = ArrayUtils.add(points, point3D.getZ() - 1);
+                                    face1 = ArrayUtils.add(face1, points.length / 3 - 1);
+                                }
+                                switch (point3D.getType()) {
+                                    case DEFAULT -> {
+                                        face1 = ArrayUtils.add(face1, 6);
+                                        face = ArrayUtils.add(face, 6);
+                                    }
+                                }
+                            }
+
+                            //Fourth face set
+                            if (plus1 != base || minus1 != base) {
+                                float[] t3 = {point3D.getX(), point3D.getY(), point3D.getZ() - 1};
+                                if (getPointIndex(points, t3) > -1)
+                                    face = ArrayUtils.add(face, getPointIndex(points, t3));
+                                else {
+                                    points = ArrayUtils.add(points, point3D.getX());
+                                    points = ArrayUtils.add(points, point3D.getY());
+                                    points = ArrayUtils.add(points, point3D.getZ() - 1);
+                                    face = ArrayUtils.add(face, points.length / 3 - 1);
+                                }
+
+                                float[] w3 = {point3D.getX(), point3D.getY() - 1, point3D.getZ() - 1};
+                                if (getPointIndex(points, w3) > -1)
+                                    face1 = ArrayUtils.add(face1, getPointIndex(points, w3));
+                                else {
+                                    points = ArrayUtils.add(points, point3D.getX());
+                                    points = ArrayUtils.add(points, point3D.getY() - 1);
+                                    points = ArrayUtils.add(points, point3D.getZ() - 1);
+                                    face1 = ArrayUtils.add(face1, points.length / 3 - 1);
+                                }
+                                switch (point3D.getType()) {
+                                    case DEFAULT -> {
+                                        face1 = ArrayUtils.add(face1, 7);
+                                        face = ArrayUtils.add(face, 7);
+                                    }
+                                }
+                            }
+
+                            if (face.length == 8)
+                                faces = ArrayUtils.add(faces, face);
+                            if (face1.length == 8)
+                                faces = ArrayUtils.add(faces, face1);
+                        }
+                    }
+                }
+
+                PolygonMesh mesh = new PolygonMesh(points, texCoords, faces);
+                int[] smooth = new int[faces.length];
+                Arrays.setAll(smooth,i -> i + 1);
+                mesh.getFaceSmoothingGroups().setAll(smooth);
+
+                setCullFace(CullFace.NONE);
+                setMaterial(mat);
+                setMesh(mesh);
+
             }
+            didChange = false;
+        });
+        MainApplication.executor.execute(t);
 
-            PolygonMesh mesh = new PolygonMesh(points, texCoords, faces);
-            int[] smooth = new int[faces.length];
-            Arrays.setAll(smooth,i -> i + 1);
-            mesh.getFaceSmoothingGroups().setAll(smooth);
-
-            setCullFace(CullFace.NONE);
-            setMaterial(mat);
-            setMesh(mesh);
-
-        }
-        didChange = false;
     }
 
     /**
