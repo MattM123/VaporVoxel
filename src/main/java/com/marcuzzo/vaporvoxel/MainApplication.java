@@ -153,6 +153,7 @@ public class MainApplication extends Application {
                 }
             }
         });
+
         /*
          Since the KeyPressed event only outputs the latest key event and not concurrent key events
          the event triggers are only used to set booleans to true on key pressed events
@@ -163,7 +164,6 @@ public class MainApplication extends Application {
             @Override
             public void handle(long timestamp) {
                 executor.execute(() -> Platform.runLater(() -> camera.checkChunk()));
-
                 if (!pause) {
                     if (w.get()) {
                         camera.getTransforms().add(forwardAffine);
@@ -184,8 +184,6 @@ public class MainApplication extends Application {
                 }
             }
         };
-
-
 
         anyPressed.addListener((obs, wasPressed, isNowPressed) -> {
             if (isNowPressed) {

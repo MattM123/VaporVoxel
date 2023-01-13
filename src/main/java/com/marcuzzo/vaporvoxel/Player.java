@@ -6,9 +6,6 @@ import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 public class Player extends PerspectiveCamera {
     private Chunk playerChunk;
@@ -27,23 +24,21 @@ public class Player extends PerspectiveCamera {
         if (playerChunk != manager.getChunkWithPlayer()) {
             //De-renders out of range chunks
             List<Chunk> chunkList = ChunkManager.render.getChunksToRender();
-            for (Node chunk : world.getChildren()) {
-                CompletableFuture.runAsync(() -> Platform.runLater(() -> {
-                    if (chunk instanceof Chunk c) {
-                        if (!chunkList.contains(c)) {
-                            world.getChildren().remove(chunk);
+
+                for (Node chunk : world.getChildren()) {
+                    Platform.runLater(() -> {
+                        if (chunk instanceof Chunk c) {
+                            if (!chunkList.contains(c)) {
+                                world.getChildren().remove(chunk);
+                            }
                         }
-                    }
-                }), MainApplication.executor);
-            }
+                    });
+                }
+
+
 
             //Calculates new chunks based on change in player chunk
-            Future<Void> f = CompletableFuture.runAsync(() -> Platform.runLater(() -> manager.updateRender(world)), MainApplication.executor);
-            try {
-                f.get();
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-            }
+            Platform.runLater(() -> manager.updateRender(world));
             playerChunk = manager.getChunkWithPlayer();
         }
     }

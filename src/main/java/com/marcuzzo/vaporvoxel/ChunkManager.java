@@ -8,9 +8,6 @@ import org.fxyz3d.geometry.Point3D;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 public class ChunkManager extends GlueList<Chunk> {
     private final Player player;
@@ -74,6 +71,11 @@ public class ChunkManager extends GlueList<Chunk> {
         return c;
     }
 
+    /**
+     * Updates the chunks surrounding the player to be added to the world if in render distance.
+     * Removes chunks from world that are no longer in render distance.
+     * @param world The root group of the scene
+     */
     public void updateRender(Group world) {
         if (getChunkWithPlayer() != null) {
 
@@ -89,23 +91,20 @@ public class ChunkManager extends GlueList<Chunk> {
                 world.getChildren().remove(get(0));
             }
 
-            //Add chunks to render to world chunk list if they don't already exist
+            //Add chunks marked for rendering to world chunk list if they don't already exist
             for (Chunk chunk : cList) {
-                Future<Void> f1 = CompletableFuture.runAsync(() -> Platform.runLater(() -> {
+                Platform.runLater(() -> {
                     if (!contains(chunk)) {
                         add(chunk);
-                        chunk.updateMesh();
+
+                        Thread t = new Thread(chunk::updateMesh);
+                        t.setDaemon(true);
+                        MainApplication.executor.execute(t);
                     }
 
                     if (!world.getChildren().contains(chunk))
-                        world.getChildren().add(chunk);
-
-                }), MainApplication.executor);
-                try {
-                    f1.get();
-                } catch (ExecutionException | InterruptedException e) {
-                    e.printStackTrace();
-                }
+                          world.getChildren().add(chunk);
+              });
             }
         }
     }

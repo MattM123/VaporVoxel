@@ -17,7 +17,7 @@ public class Chunk extends PolygonMeshView {
     private boolean didChange = false;
     private final List<Cube> cubes = new GlueList<>();
     private final int[][] heightMap = new int[CHUNK_BOUNDS][CHUNK_BOUNDS];
-    private final GlueList<Cube> heightMapPointList = new GlueList<>();
+    private final List<Cube> heightMapPointList = new GlueList<>();
     private final long seed = 1234567890;
     private final TextureAtlas textures;
 
@@ -183,12 +183,11 @@ public class Chunk extends PolygonMeshView {
      */
     public void updateMesh() {
         if (cubes.size() > 0 && didChange) {
-            System.out.println("======Updating Chunk Mesh at (" + getLocation().getX() + " " + getLocation().getY() + " " + getLocation().getZ() + ")======");
 
             //Defining block texture atlas
             PhongMaterial mat = new PhongMaterial();
 
-            if (textures != null)
+            if (textures != null && mat.getDiffuseMap() != textures.getImage())
                 mat.setDiffuseMap(textures.getImage());
             else {
                 System.out.println("Null Textures");
@@ -215,7 +214,12 @@ public class Chunk extends PolygonMeshView {
 
             float[] points = new float[0];
             int[][] faces = new int[0][0];
-            heightMapPointList.addAll(getInterpolatedCubes());
+
+            List<Cube> cList = getInterpolatedCubes();
+            for (Cube c : cList) {
+                if (!heightMapPointList.contains(c))
+                    heightMapPointList.add(c);
+            }
 
             /*===================================
               Rendering Z Axis Faces
@@ -223,6 +227,7 @@ public class Chunk extends PolygonMeshView {
             for (int i = 0; i < CHUNK_HEIGHT; i++) {
                 float finalI = i;
                 List<Cube> p = heightMapPointList.stream().filter(q -> q.getZ() == finalI).toList();
+
 
                 if (!p.isEmpty()) {
                     for (Point3D point3D : p) {
@@ -289,7 +294,6 @@ public class Chunk extends PolygonMeshView {
 
                 List<Cube> x = heightMapPointList.stream().filter(q -> q.getX() == (getLocation().getX() + finalI)).toList();
                 List<Cube> y = heightMapPointList.stream().filter(q -> q.getY() == (getLocation().getY() + finalI)).toList();
-
 
                 if (!x.isEmpty()) {
                     for (Cube point3D : x) {
@@ -566,12 +570,6 @@ public class Chunk extends PolygonMeshView {
             Arrays.setAll(smooth,i -> i + 1);
             mesh.getFaceSmoothingGroups().setAll(smooth);
 
-
-            System.out.println(mesh.getPoints().size() + " Visible Vertices");
-            System.out.println(mesh.getFaces().length + " Visible Faces");
-            System.out.println(heightMapPointList.size() + " Visible Cubes");
-            System.out.println("Total Cubes in chunk: " + cubes.size());
-
             setCullFace(CullFace.NONE);
             setMaterial(mat);
             setMesh(mesh);
@@ -609,38 +607,38 @@ public class Chunk extends PolygonMeshView {
      * |-----|-----|-----|
      *       |  b  |
      *       |-----|
-     *
-     *   Not fast, very slow
+     * TODO: Multi-thread
      */
     private List<Cube> getInterpolatedCubes() {
         List<Cube> interpolation = new GlueList<>();
         for (Cube base : heightMapPointList) {
-            List<Cube> comparisons = new GlueList<>();
-            comparisons.add(new Cube((int) base.getX() + 1, (int) base.getY(), getGlobalHeightMapValue((int) (base.getX() + 1), (int) base.getY())));
-            comparisons.add(new Cube((int) base.getX(), (int) base.getY() + 1, getGlobalHeightMapValue((int) (base.getX()), (int) base.getY() + 1)));
-            comparisons.add(new Cube((int) base.getX() - 1, (int) base.getY(), getGlobalHeightMapValue((int) (base.getX() - 1), (int) base.getY())));
-            comparisons.add(new Cube((int) base.getX(), (int) base.getY() - 1, getGlobalHeightMapValue((int) (base.getX()), (int) base.getY() - 1)));
+                    List<Cube> comparisons = new GlueList<>();
+                    comparisons.add(new Cube((int) base.getX() + 1, (int) base.getY(), getGlobalHeightMapValue((int) (base.getX() + 1), (int) base.getY())));
+                    comparisons.add(new Cube((int) base.getX(), (int) base.getY() + 1, getGlobalHeightMapValue((int) (base.getX()), (int) base.getY() + 1)));
+                    comparisons.add(new Cube((int) base.getX() - 1, (int) base.getY(), getGlobalHeightMapValue((int) (base.getX() - 1), (int) base.getY())));
+                    comparisons.add(new Cube((int) base.getX(), (int) base.getY() - 1, getGlobalHeightMapValue((int) (base.getX()), (int) base.getY() - 1)));
 
+                    for (Cube compare : comparisons) {
+                        //Get the tallest column and the number of cubes to interpolate
+                        int taller = (int) compare.getZ() - (int) base.getZ();
+                        int numOfCubes = Math.abs(taller) - 1;
+                        boolean compareTaller = taller > 0;
 
-            for (Cube compare : comparisons) {
-                //Get the tallest column and the number of cubes to interpolate
-                int taller = (int) compare.getZ() - (int) base.getZ();
-                int numOfCubes = Math.abs(taller) - 1;
-                boolean compareTaller = taller > 0;
+                        for (int j = 1; j < numOfCubes + 1; j++) {
+                            Cube newCube;
+                            if (compareTaller) {
+                                newCube = new Cube((int) compare.getX(), (int) compare.getY(), (int) compare.getZ() - j);
+                            } else {
+                                newCube = new Cube((int) base.getX(), (int) base.getY(), (int) base.getZ() - j);
+                            }
+                            newCube.setType(BlockType.DEFAULT);
 
-                for (int j = 1; j < numOfCubes + 1; j++) {
-                    Cube newCube;
-                    if (compareTaller) {
-                        newCube = new Cube((int) compare.getX(), (int) compare.getY(), (int) compare.getZ() - j);
-                    } else {
-                        newCube = new Cube((int) base.getX(), (int) base.getY(), (int) base.getZ() - j);
+                            if (!interpolation.contains(newCube))
+                                interpolation.add(newCube);
+                        }
                     }
-                    newCube.setType(BlockType.DEFAULT);
-                    if (!interpolation.contains(newCube))
-                        interpolation.add(newCube);
-                }
-            }
         }
+
         return interpolation;
     }
 
@@ -657,11 +655,11 @@ public class Chunk extends PolygonMeshView {
 
         //Affects coalescence of terrain. A higher value will result in more condensed, sharp peaks and a lower value will result in
         //more smooth, spread out hills.
-        double var2 = 0.015;//0.005;
+        double var2 = 0.01;
 
-        float f = (1 * OpenSimplex.noise2(seed, (x * var2), (y * var2)) / var1) //Noise Octave 1
-                + (float) (0.5 * OpenSimplex.noise2(seed, (x * (var2 * 2)), (y * (var2 * 2))) / var1) //Noise Octave 2
-                + (float) (0.5 * OpenSimplex.noise2(seed, (x * (var2 * 2)), (y * (var2 * 2))) / var1); //Noise Octave 3
+        float f = (1 * OpenSimplex.noise2(seed, (x * var2), (y * var2)) / (var1 + 2)) //Noise Octave 1
+                + (float) (0.5 * OpenSimplex.noise2(seed, (x * (var2 * 2)), (y * (var2 * 2))) / (var1 + 4)) //Noise Octave 2
+                + (float) (0.25 * OpenSimplex.noise2(seed, (x * (var2 * 2)), (y * (var2 * 2))) / (var1 + 6)); //Noise Octave 3
 
         return (int) Math.floor(((f + 1) / 2) * (CHUNK_HEIGHT - 1));
     }
