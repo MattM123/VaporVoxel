@@ -8,6 +8,7 @@ public class Cube extends Point3D {
     public Cube(int x, int y, int z) {
         super(x, y, z);
         isActive = false;
+        setType(BlockType.DEFAULT);
     }
 
     //public boolean isActive(){

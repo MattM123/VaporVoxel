@@ -8,7 +8,11 @@ import org.fxyz3d.shapes.polygon.PolygonMesh;
 import org.fxyz3d.shapes.polygon.PolygonMeshView;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.ConcurrentModificationException;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 public class Chunk extends PolygonMeshView {
     private Point3D location;
@@ -219,18 +223,41 @@ public class Chunk extends PolygonMeshView {
 
                 List<Cube> cList = getInterpolatedCubes();
                 for (Cube c : cList) {
-                    if (!heightMapPointList.contains(c))
-                        heightMapPointList.add(c);
+                    if (c != null) {
+                        if (!heightMapPointList.contains(c))
+                            heightMapPointList.add(c);
+                    }
                 }
+
+
+
 
         /*===================================
           Rendering Z Axis Faces
         ==================================*/
                 for (int i = 0; i < CHUNK_HEIGHT; i++) {
                     float finalI = i;
-                    List<Cube> p = heightMapPointList.stream().filter(q -> q.getZ() == finalI).toList();
+                    final int max = 10;
+                    int count = 0;
+                    List<Cube> p = null;
 
+                    while (count < max) {
+                        try {
+                            count++;
+                            p = heightMapPointList.stream().filter(q -> q.getZ() == finalI).toList();
+                            break;
+                        } catch (ConcurrentModificationException e) {
+                            System.out.println("CoMod Exception on count: " + count);
+                            try {
+                                Thread.sleep(1);
+                            } catch (InterruptedException ex) {
+                                throw new RuntimeException(ex);
+                            }
+                        }
+                    }
+                    //List<Cube> p = heightMapPointList.stream().filter(q -> q != null && q.getZ() == finalI).toList();
 
+                    assert p != null;
                     if (!p.isEmpty()) {
                         for (Point3D point3D : p) {
                             int[] face = new int[0];
@@ -293,10 +320,30 @@ public class Chunk extends PolygonMeshView {
         ==================================*/
                 for (int i = 0; i < CHUNK_BOUNDS; i++) {
                     float finalI = i;
+                    final int max = 10;
+                    int count = 0;
+                    List<Cube> x = null;
+                    List<Cube> y = null;
 
-                    List<Cube> x = heightMapPointList.stream().filter(q -> q.getX() == (getLocation().getX() + finalI)).toList();
-                    List<Cube> y = heightMapPointList.stream().filter(q -> q.getY() == (getLocation().getY() + finalI)).toList();
+                    while (count < max) {
+                        try {
+                            count++;
+                            x = heightMapPointList.stream().filter(q -> q.getX() == (getLocation().getX() + finalI)).toList();
+                            y = heightMapPointList.stream().filter(q -> q.getY() == (getLocation().getY() + finalI)).toList();
+                            break;
+                        } catch (ConcurrentModificationException e) {
+                            System.out.println("CoMod Exception on count: " + count);
+                            try {
+                                Thread.sleep(1);
+                            } catch (InterruptedException ex) {
+                                throw new RuntimeException(ex);
+                            }
+                        }
+                    }
+                  //  List<Cube> x = heightMapPointList.stream().filter(q -> q != null && q.getX() == (getLocation().getX() + finalI)).toList();
+                    //List<Cube> y = heightMapPointList.stream().filter(q -> q != null && q.getY() == (getLocation().getY() + finalI)).toList();
 
+                    assert x != null;
                     if (!x.isEmpty()) {
                         for (Cube point3D : x) {
                             int[] face = new int[0];
@@ -431,6 +478,7 @@ public class Chunk extends PolygonMeshView {
                         }
                     }
 
+                    assert y != null;
                     if (!y.isEmpty()) {
                         for (Cube point3D : y) {
                             int[] face = new int[0];
@@ -612,36 +660,47 @@ public class Chunk extends PolygonMeshView {
      * |-----|-----|-----|
      *       |  b  |
      *       |-----|
-     * TODO: Multi-thread
      */
     private List<Cube> getInterpolatedCubes() {
-        List<Cube> interpolation = new GlueList<>();
-        for (Cube base : heightMapPointList) {
-                    List<Cube> comparisons = new GlueList<>();
-                    comparisons.add(new Cube((int) base.getX() + 1, (int) base.getY(), getGlobalHeightMapValue((int) (base.getX() + 1), (int) base.getY())));
-                    comparisons.add(new Cube((int) base.getX(), (int) base.getY() + 1, getGlobalHeightMapValue((int) (base.getX()), (int) base.getY() + 1)));
-                    comparisons.add(new Cube((int) base.getX() - 1, (int) base.getY(), getGlobalHeightMapValue((int) (base.getX() - 1), (int) base.getY())));
-                    comparisons.add(new Cube((int) base.getX(), (int) base.getY() - 1, getGlobalHeightMapValue((int) (base.getX()), (int) base.getY() - 1)));
+        List<Cube> copy = new GlueList<>(heightMapPointList);
+        List<Cube> interpolation = Collections.synchronizedList(new GlueList<>());
+        final List<Future<?>> futures = Collections.synchronizedList(new GlueList<>());
+        for (Cube base : copy) {
+            Future<?> f = MainApplication.interpolExecutor.submit(() -> {
+                List<Cube> comparisons = new GlueList<>();
+                comparisons.add(new Cube((int) base.getX() + 1, (int) base.getY(), getGlobalHeightMapValue((int) (base.getX() + 1), (int) base.getY())));
+                comparisons.add(new Cube((int) base.getX(), (int) base.getY() + 1, getGlobalHeightMapValue((int) (base.getX()), (int) base.getY() + 1)));
+                comparisons.add(new Cube((int) base.getX() - 1, (int) base.getY(), getGlobalHeightMapValue((int) (base.getX() - 1), (int) base.getY())));
+                comparisons.add(new Cube((int) base.getX(), (int) base.getY() - 1, getGlobalHeightMapValue((int) (base.getX()), (int) base.getY() - 1)));
 
-                    for (Cube compare : comparisons) {
-                        //Get the tallest column and the number of cubes to interpolate
-                        int taller = (int) compare.getZ() - (int) base.getZ();
-                        int numOfCubes = Math.abs(taller) - 1;
-                        boolean compareTaller = taller > 0;
+                for (Cube compare : comparisons) {
+                    //Get the tallest column and the number of cubes to interpolate
+                    int taller = (int) compare.getZ() - (int) base.getZ();
+                    int numOfCubes = Math.abs(taller) - 1;
+                    boolean compareTaller = taller > 0;
 
-                        for (int j = 1; j < numOfCubes + 1; j++) {
-                            Cube newCube;
-                            if (compareTaller) {
-                                newCube = new Cube((int) compare.getX(), (int) compare.getY(), (int) compare.getZ() - j);
-                            } else {
-                                newCube = new Cube((int) base.getX(), (int) base.getY(), (int) base.getZ() - j);
-                            }
-                            newCube.setType(BlockType.DEFAULT);
-
-                            if (!interpolation.contains(newCube))
-                                interpolation.add(newCube);
+                    for (int j = 1; j < numOfCubes + 1; j++) {
+                        Cube newCube;
+                        if (compareTaller) {
+                            newCube = new Cube((int) compare.getX(), (int) compare.getY(), (int) compare.getZ() - j);
+                        } else {
+                            newCube = new Cube((int) base.getX(), (int) base.getY(), (int) base.getZ() - j);
                         }
+
+                        if (!interpolation.contains(newCube))
+                            interpolation.add(newCube);
                     }
+                }
+            });
+            futures.add(f);
+        }
+
+        try {
+            for (Future<?> w : futures) {
+                w.get();
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
         }
 
         return interpolation;
@@ -675,6 +734,7 @@ public class Chunk extends PolygonMeshView {
     public Point3D getLocation() {
         return location;
     }
+
 
     @Override
     public String toString() {

@@ -53,6 +53,7 @@ public class MainApplication extends Application {
     private final Affine leftAffine = new Affine();
     private final Affine rightAffine = new Affine();
     public static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread::new);
+    public static ExecutorService interpolExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread::new);
     public static ChunkManager publicManager ;
 
     @Override
