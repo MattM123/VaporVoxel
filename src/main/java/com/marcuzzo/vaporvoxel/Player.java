@@ -1,5 +1,6 @@
 package com.marcuzzo.vaporvoxel;
 
+import com.marcuzzo.vaporvoxel.EventTypes.PlayerEvent;
 import javafx.application.Platform;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -8,40 +9,30 @@ import javafx.scene.PerspectiveCamera;
 import java.util.List;
 
 public class Player extends PerspectiveCamera {
-    private Chunk playerChunk;
+    public Chunk playerChunk;
     private ChunkManager manager;
-    private final Group world;
+
     public Player(boolean b, Group world) {
         super(b);
-        this.world = world;
-    }
-
-    /**
-     * Detects player movement from one chunk to another. Used to tell the chunk manager
-     * when to render and de-render chunks surrounding a player.
-     */
-    public void checkChunk() {
-        if (playerChunk != manager.getChunkWithPlayer()) {
-            //De-renders out of range chunks
-            List<Chunk> chunkList = ChunkManager.render.getChunksToRender();
-
-                for (Node chunk : world.getChildren()) {
-                    Platform.runLater(() -> {
-                        if (chunk instanceof Chunk c) {
-                            if (!chunkList.contains(c)) {
-                                world.getChildren().remove(chunk);
-                            }
-                        }
-                    });
-                }
-
-
-
-            //Calculates new chunks based on change in player chunk
-            Platform.runLater(() -> manager.updateRender(world));
+        addEventHandler(PlayerEvent.CHUNK_TRANSITION, transitionEvent -> {
             playerChunk = manager.getChunkWithPlayer();
-        }
+            List<Chunk> chunkList = ChunkManager.renderer.getChunksToRender();
+
+            for (Node chunk : world.getChildren()) {
+                Platform.runLater(() -> {
+                    if (chunk instanceof Chunk c) {
+                        if (!chunkList.contains(c)) {
+                            world.getChildren().remove(chunk);
+                        }
+                    }
+                });
+            }
+
+            //Calculates new chunks to renderer and re-renderer based on change in player chunk
+            Platform.runLater(() -> manager.updateRender(world));
+        });
     }
+
     public void setManager(ChunkManager manager) {
         this.manager = manager;
         this.playerChunk =  manager.getChunkWithPlayer();

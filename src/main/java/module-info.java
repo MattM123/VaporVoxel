@@ -18,4 +18,8 @@ module com.marcuzzo.vaporvoxel {
 
     opens com.marcuzzo.vaporvoxel to javafx.fxml;
     exports com.marcuzzo.vaporvoxel;
+    exports com.marcuzzo.vaporvoxel.Events;
+    opens com.marcuzzo.vaporvoxel.Events to javafx.fxml;
+    exports com.marcuzzo.vaporvoxel.EventTypes;
+    opens com.marcuzzo.vaporvoxel.EventTypes to javafx.fxml;
 }

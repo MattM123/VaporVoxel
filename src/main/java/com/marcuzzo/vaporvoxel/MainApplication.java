@@ -1,8 +1,9 @@
 package com.marcuzzo.vaporvoxel;
 
+import com.marcuzzo.vaporvoxel.EventTypes.PlayerEvent;
+import com.marcuzzo.vaporvoxel.Events.ChunkTransitionEvent;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -164,7 +165,9 @@ public class MainApplication extends Application {
         AnimationTimer timer = new AnimationTimer() {
             @Override
             public void handle(long timestamp) {
-                executor.execute(() -> Platform.runLater(() -> camera.checkChunk()));
+                if (manager.getChunkWithPlayer() != camera.playerChunk)
+                    camera.fireEvent(new ChunkTransitionEvent(PlayerEvent.CHUNK_TRANSITION));
+
                 if (!pause) {
                     if (w.get()) {
                         camera.getTransforms().add(forwardAffine);

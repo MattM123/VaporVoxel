@@ -16,7 +16,7 @@ public class ChunkRenderer {
     /**
      *
      * Determines what chunks should be rendered around the player.
-     * @param renderDistance Controls the range in which chunks should render.
+     * @param renderDistance Controls the range in which chunks should renderer.
      * @param bounds The length of the chunk.
      * @param playerChunk The chunk a player inhabits.
      * @param manager The chunk manager that is responsible for rendering,
@@ -92,7 +92,7 @@ public class ChunkRenderer {
         return chunks;
     }
     /**
-     * Gets the chunks that should be rendered along the X And Y axis. E.x a render distance
+     * Gets the chunks that should be rendered along the X And Y axis. E.x a renderer distance
      * of 2 would return 8 chunks, 2 on every side of the player in each cardinal direction
      *
      * @return A list of chunks that should be rendered in x, y, -x, and -y directions
@@ -140,7 +140,7 @@ public class ChunkRenderer {
         return chunks;
     }
     /**
-     * Returns a list of chunks that should be rendered around a player based on a render distance value
+     * Returns a list of chunks that should be rendered around a player based on a renderer distance value
      * @return The list of chunks that should be rendered
      */
     public List<Chunk> getChunksToRender() {

@@ -13,6 +13,7 @@ import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.logging.Logger;
 
 public class Chunk extends PolygonMeshView {
     private Point3D location;
@@ -24,6 +25,7 @@ public class Chunk extends PolygonMeshView {
     private final List<Cube> heightMapPointList = new GlueList<>();
     private final long seed = 1234567890;
     private final TextureAtlas textures;
+    private static final Logger logger = Logger.getLogger("Chunk.class");
 
     //private Point3D pickedCube;
 
@@ -38,7 +40,7 @@ public class Chunk extends PolygonMeshView {
         Cube selection outline
         =========================================*/
         //Check if adjacent points are in heightmappointlist
-        setOnMouseMoved(mouseEvent -> {
+       // setOnMouseMoved(mouseEvent -> {
          //   Point3D p = Point3D.convertFromJavaFXPoint3D(mouseEvent.getPickResult().getIntersectedPoint());
            // System.out.println(p);
             //If cursor hovers top or bottom of cube
@@ -110,7 +112,7 @@ public class Chunk extends PolygonMeshView {
             }
 
              */
-        });
+      //  });
     }
 
     /**
@@ -154,7 +156,7 @@ public class Chunk extends PolygonMeshView {
         //How far down caves should start generating
         int caveStart = 50;
 
-        //checks chunks for cubes to render based on noise value and heightmap
+        //checks chunks for cubes to renderer based on noise value and heightmap
         for (int x1 = x; x1 < x + CHUNK_BOUNDS; x1++) {
             for (int y1 = y; y1 < y + CHUNK_BOUNDS; y1++) {
                 for (int z1 = z; z1 <= heightMap[xCount][yCount]; z1++) {
@@ -247,7 +249,7 @@ public class Chunk extends PolygonMeshView {
                             p = heightMapPointList.stream().filter(q -> q.getZ() == finalI).toList();
                             break;
                         } catch (ConcurrentModificationException e) {
-                            System.out.println("CoMod Exception on count: " + count);
+                            logger.info("CoModificationException on chunk rendering attempt " + count);
                             try {
                                 Thread.sleep(1);
                             } catch (InterruptedException ex) {
@@ -255,9 +257,12 @@ public class Chunk extends PolygonMeshView {
                             }
                         }
                     }
-                    //List<Cube> p = heightMapPointList.stream().filter(q -> q != null && q.getZ() == finalI).toList();
 
-                    assert p != null;
+
+                    if (p == null) {
+                        logger.warning("CoModificationException found on all attempts. Chunk may not renderer properly.");
+                        p = heightMapPointList.stream().filter(q -> q != null && q.getZ() == finalI).toList();
+                    }
                     if (!p.isEmpty()) {
                         for (Point3D point3D : p) {
                             int[] face = new int[0];
@@ -332,7 +337,9 @@ public class Chunk extends PolygonMeshView {
                             y = heightMapPointList.stream().filter(q -> q.getY() == (getLocation().getY() + finalI)).toList();
                             break;
                         } catch (ConcurrentModificationException e) {
-                            System.out.println("CoMod Exception on count: " + count);
+                            logger.info("CoModificationException on chunk rendering attempt " + count);
+                            if (count == max)
+                                e.printStackTrace();
                             try {
                                 Thread.sleep(1);
                             } catch (InterruptedException ex) {
@@ -340,10 +347,11 @@ public class Chunk extends PolygonMeshView {
                             }
                         }
                     }
-                  //  List<Cube> x = heightMapPointList.stream().filter(q -> q != null && q.getX() == (getLocation().getX() + finalI)).toList();
-                    //List<Cube> y = heightMapPointList.stream().filter(q -> q != null && q.getY() == (getLocation().getY() + finalI)).toList();
 
-                    assert x != null;
+                    if (x == null) {
+                        logger.warning("CoModificationException found on all attempts. Chunk may not renderer properly.");
+                        x = heightMapPointList.stream().filter(q -> q != null && q.getX() == (getLocation().getX() + finalI)).toList();
+                    }
                     if (!x.isEmpty()) {
                         for (Cube point3D : x) {
                             int[] face = new int[0];
@@ -478,7 +486,10 @@ public class Chunk extends PolygonMeshView {
                         }
                     }
 
-                    assert y != null;
+                    if (y == null) {
+                        logger.warning("CoModificationException found on all attempts. Chunk may not renderer properly.");
+                        y = heightMapPointList.stream().filter(q -> q != null && q.getY() == (getLocation().getY() + finalI)).toList();
+                    }
                     if (!y.isEmpty()) {
                         for (Cube point3D : y) {
                             int[] face = new int[0];
@@ -652,14 +663,15 @@ public class Chunk extends PolygonMeshView {
     }
 
     /**
-     * Given a chunk heightmap, interpolates between cubes to fill in vertical gaps in terrain generation
-     *       |-----|
-     *       |  d  |
-     * |-----|-----|-----|
-     * |  c  |base |  a  |
-     * |-----|-----|-----|
-     *       |  b  |
-     *       |-----|
+     * Given a chunk heightmap, interpolates between cubes to fill in vertical gaps in terrain generation.
+     * Makes comparisons between the 4 cardinal cubes of each cube
+     *       |-----|              |-----|
+     *       |  d  |              |  a  |
+     * |-----|-----|-----|        |-----|
+     * |  c  |base |  a  |        |  ?  | <- unknown
+     * |-----|-----|-----|  |-----|-----|
+     *       |  b  |        | base|
+     *       |-----|        |-----|
      */
     private List<Cube> getInterpolatedCubes() {
         List<Cube> copy = new GlueList<>(heightMapPointList);
@@ -726,6 +738,7 @@ public class Chunk extends PolygonMeshView {
                 + (float) (0.25 * OpenSimplex.noise2(seed, (x * (var2 * 2)), (y * (var2 * 2))) / (var1 + 6)); //Noise Octave 3
 
         return (int) Math.floor(((f + 1) / 2) * (CHUNK_HEIGHT - 1));
+
     }
     /**
      * Since the location of each chunk is unique this is used as an identifier for chunk rendering

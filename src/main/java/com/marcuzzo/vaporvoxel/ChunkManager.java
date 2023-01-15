@@ -12,7 +12,7 @@ import java.util.Map;
 public class ChunkManager extends GlueList<Chunk> {
     private final Player player;
     public final int RENDER_DISTANCE = 5;
-    public static ChunkRenderer render;
+    public static ChunkRenderer renderer;
     private final TextureAtlas textures;
 
     public ChunkManager(Player player, Group world) {
@@ -31,11 +31,15 @@ public class ChunkManager extends GlueList<Chunk> {
 
     public Chunk getChunkWithPlayer() {
         Chunk c = null;
-        if (render != null) {
+        if (renderer != null) {
             for (Chunk chunk : this) {
                 if (Math.abs(player.getBoundsInParent().getCenterX() - chunk.getBoundsInParent().getCenterX()) <= chunk.CHUNK_BOUNDS &&
                         Math.abs(player.getBoundsInParent().getCenterY() - chunk.getBoundsInParent().getCenterY()) <= chunk.CHUNK_BOUNDS) {
-                    c = chunk;
+                    c = getChunkWithLocation(new Point3D(
+                            player.getBoundsInParent().getCenterX() - (player.getBoundsInParent().getCenterX() % 16),
+                            player.getBoundsInParent().getCenterY() - (player.getBoundsInParent().getCenterY() % 16),
+                            0
+                    ));
                     break;
                 }
             }
@@ -46,6 +50,11 @@ public class ChunkManager extends GlueList<Chunk> {
         return c;
     }
 
+    /**
+     * Checks if the manager contains a specific chunk defined by its location
+     * @param loc The location of the chunk to check for
+     * @return True of the chunk exists, false if not
+     */
     public boolean containsChunkWithLocation(final Point3D loc) {
         return stream().map(Chunk::getLocation).anyMatch(loc::equals);
     }
@@ -59,31 +68,22 @@ public class ChunkManager extends GlueList<Chunk> {
      * @return Null if the chunk doesn't exist, else will return the chunk
      */
     public Chunk getChunkWithLocation(Point3D loc) {
-        Chunk c = null;
-        if (containsChunkWithLocation(loc)) {
-            for (Chunk chunk : this) {
-                if (chunk.getLocation().equals(loc)) {
-                    c = chunk;
-                    break;
-                }
-            }
-        }
-        return c;
+        return parallelStream().filter(chunk -> chunk.getLocation().equals(loc)).findFirst().orElse(null);
     }
 
     /**
-     * Updates the chunks surrounding the player to be added to the world if in render distance.
-     * Removes chunks from world that are no longer in render distance.
+     * Updates the chunks surrounding the player to be added to the world if in renderer distance.
+     * Also removes chunks from world that are no longer in renderer distance.
      * @param world The root group of the scene
      */
     public void updateRender(Group world) {
         if (getChunkWithPlayer() != null) {
 
             //Spawn chunk rendering and de-rendering
-            render = new ChunkRenderer(RENDER_DISTANCE, getChunkWithPlayer().CHUNK_BOUNDS,
+            renderer = new ChunkRenderer(RENDER_DISTANCE, getChunkWithPlayer().CHUNK_BOUNDS,
                     getChunkWithPlayer(), this, textures);
 
-            List<Chunk> cList = render.getChunksToRender();
+            List<Chunk> cList = renderer.getChunksToRender();
 
             if (!world.getChildren().contains(get(0)))
                 world.getChildren().add(get(0));
