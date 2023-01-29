@@ -8,13 +8,10 @@ import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Point3D;
-import javafx.scene.AmbientLight;
-import javafx.scene.Group;
-import javafx.scene.Scene;
-import javafx.scene.SceneAntialiasing;
+import javafx.scene.*;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
@@ -22,9 +19,11 @@ import javafx.scene.transform.Transform;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 
+import java.awt.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 
 public class MainApplication extends Application {
     public static Group world;
@@ -55,23 +54,34 @@ public class MainApplication extends Application {
     private final Affine rightAffine = new Affine();
     public static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread::new);
     public static ExecutorService interpolExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), Thread::new);
-    public static ChunkManager publicManager ;
+    public static ChunkManager publicManager;
+    private final long[] frameTimes = new long[100];
+    private int frameTimeIndex = 0 ;
+    private boolean arrayFilled = false ;
 
     @Override
     public void start(Stage stage) {
-        //FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("view.fxml"));
-        //Parent root = fxmlLoader.load();
-
         //Group root = new Group();
         world = new Group();
 
+        //Getting frame size
+        GraphicsEnvironment gc = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        Rectangle bounds = gc.getMaximumWindowBounds();
+
+        Insets screenInsets = Toolkit.getDefaultToolkit().getScreenInsets(gc.getDefaultScreenDevice().getDefaultConfiguration());
+
+        Rectangle effectiveScreenArea = new Rectangle();
+        effectiveScreenArea.x = bounds.x + screenInsets.left;
+        effectiveScreenArea.y = bounds.y + screenInsets.top;
+        effectiveScreenArea.height = bounds.height - screenInsets.top - screenInsets.bottom;
+        effectiveScreenArea.width = bounds.width - screenInsets.left - screenInsets.right;
+
+        //Camera and manager setup
         world.getChildren().add(new AmbientLight(Color.WHITE));
         camera = new Player(true, world);
         ChunkManager manager = new ChunkManager(camera, world);
         publicManager = manager;
         camera.setManager(manager);
-
-
 
         Rotate camRot = new Rotate(-90, Rotate.X_AXIS);
         camera.setFarClip(2000);
@@ -80,18 +90,59 @@ public class MainApplication extends Application {
         camera.setFieldOfView(60);
 
 
-        StackPane pane = new StackPane();
-        pane.setMaxHeight(100);
-        pane.setMaxWidth(100);
-        pane.getChildren().addAll(new Label("Test"));
-        world.getChildren().add(pane);
+        //Defining root groups
+        AnchorPane globalRoot = new AnchorPane();
+        Scene scene = new Scene(globalRoot, effectiveScreenArea.getWidth(), effectiveScreenArea.getHeight(), true, SceneAntialiasing.BALANCED);
+
+        //3D root
+        SubScene sub = new SubScene(world,  effectiveScreenArea.getWidth(), effectiveScreenArea.getHeight(), true, SceneAntialiasing.BALANCED);
+        sub.setCamera(camera);
+        globalRoot.getChildren().add(sub);
+
+        //Framerate and position display information
+        Label framerate = new Label();
+        Label chunkCache = new Label();
+        Label position = new Label();
+        Label chunkPos = new Label();
+
+        framerate.setTranslateY(0);
+        chunkCache.setTranslateY(15);
+        position.setTranslateY(30);
+        chunkPos.setTranslateY(45);
+
+        AnimationTimer frameRateMeter = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                chunkCache.setText("Chunk Cache Size: " + manager.size());
+                position.setText("Current Position: (" + camera.getBoundsInParent().getCenterX() + ", "
+                        + camera.getBoundsInParent().getCenterY() + ", " + camera.getBoundsInParent().getCenterZ());
+                chunkPos.setText("Current Chunk: " + camera.playerChunk);
+
+                long oldFrameTime = frameTimes[frameTimeIndex] ;
+                frameTimes[frameTimeIndex] = now ;
+                frameTimeIndex = (frameTimeIndex + 1) % frameTimes.length ;
+                if (frameTimeIndex == 0) {
+                    arrayFilled = true ;
+                }
+                if (arrayFilled) {
+                    long elapsedNanos = now - oldFrameTime ;
+                    long elapsedNanosPerFrame = elapsedNanos / frameTimes.length ;
+                    double frameRate = 1_000_000_000.0 / elapsedNanosPerFrame ;
+                    framerate.setText(String.format("Current frame rate: %.3f", frameRate));
+                }
+            }
+        };
+        frameRateMeter.start();
+        globalRoot.getChildren().addAll(framerate, chunkCache, position, chunkPos);
 
 
-        Scene scene = new Scene(world, Double.MAX_VALUE, Double.MAX_VALUE, true, SceneAntialiasing.DISABLED);
-        scene.setCamera(camera);
+        //Stage setup
         stage.setTitle("TestFrame");
         stage.setScene(scene);
         stage.show();
+
+
+
 
 
         AtomicBoolean pressed = new AtomicBoolean(false);
@@ -103,8 +154,6 @@ public class MainApplication extends Application {
         });
 
         scene.setOnMouseMoved((MouseEvent event) -> {
-            pane.setLayoutX(camera.getBoundsInParent().getCenterX());
-            pane.setLayoutY(camera.getBoundsInParent().getCenterY());
             if (pressed.get() && !pause) {
                 dx = event.getSceneX() - newX;
                 dy = event.getSceneY() - newY;
@@ -132,8 +181,6 @@ public class MainApplication extends Application {
         });
 
         scene.setOnKeyPressed(event -> {
-            pane.setLayoutX(camera.getBoundsInParent().getCenterX());
-            pane.setLayoutY(camera.getBoundsInParent().getCenterY());
             switch (event.getCode()){
                 case A -> a.set(true);
                 case D -> d.set(true);
@@ -167,6 +214,7 @@ public class MainApplication extends Application {
             public void handle(long timestamp) {
                 if (manager.getChunkWithPlayer() != camera.playerChunk)
                     camera.fireEvent(new ChunkTransitionEvent(PlayerEvent.CHUNK_TRANSITION));
+
 
                 if (!pause) {
                     if (w.get()) {

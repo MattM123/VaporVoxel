@@ -3,10 +3,7 @@ package com.marcuzzo.vaporvoxel;
 import com.marcuzzo.vaporvoxel.EventTypes.PlayerEvent;
 import javafx.application.Platform;
 import javafx.scene.Group;
-import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
-
-import java.util.List;
 
 public class Player extends PerspectiveCamera {
     public Chunk playerChunk;
@@ -16,19 +13,8 @@ public class Player extends PerspectiveCamera {
         super(b);
         addEventHandler(PlayerEvent.CHUNK_TRANSITION, transitionEvent -> {
             playerChunk = manager.getChunkWithPlayer();
-            List<Chunk> chunkList = ChunkManager.renderer.getChunksToRender();
 
-            for (Node chunk : world.getChildren()) {
-                Platform.runLater(() -> {
-                    if (chunk instanceof Chunk c) {
-                        if (!chunkList.contains(c)) {
-                            world.getChildren().remove(chunk);
-                        }
-                    }
-                });
-            }
-
-            //Calculates new chunks to renderer and re-renderer based on change in player chunk
+            //Calculates new chunks to render or re-render
             Platform.runLater(() -> manager.updateRender(world));
         });
     }

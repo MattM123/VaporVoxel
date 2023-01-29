@@ -7,6 +7,7 @@ import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.shapes.polygon.PolygonMesh;
 import org.fxyz3d.shapes.polygon.PolygonMeshView;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.ConcurrentModificationException;
@@ -15,7 +16,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
-public class Chunk extends PolygonMeshView {
+public class Chunk extends PolygonMeshView implements Serializable {
     private Point3D location;
     public final int CHUNK_BOUNDS = 16;
     public final int CHUNK_HEIGHT = 320;
