@@ -7,22 +7,24 @@ import javafx.scene.PerspectiveCamera;
 
 public class Player extends PerspectiveCamera {
     public Chunk playerChunk;
-    private ChunkManager manager;
+    public Region playerRegion;
 
     public Player(boolean b, Group world) {
         super(b);
+        addEventHandler(PlayerEvent.CHUNK_TRANSITION, transitionEvent ->
+                playerRegion = MainApplication.currentWorld.getRegionWithPlayer());
+
         addEventHandler(PlayerEvent.CHUNK_TRANSITION, transitionEvent -> {
-            playerChunk = manager.getChunkWithPlayer();
+            playerChunk = MainApplication.currentWorld.getRegionWithPlayer().getChunkWithPlayer();
 
             //Calculates new chunks to render or re-render
-            Platform.runLater(() -> manager.updateRender(world));
+            Platform.runLater(() -> MainApplication.currentWorld.getRegionWithPlayer().updateRender(world));
         });
     }
 
-    public void setManager(ChunkManager manager) {
-        this.manager = manager;
-        this.playerChunk =  manager.getChunkWithPlayer();
-    }
+  //  public void setManager(ChunkManager manager) {
+    //    this.playerChunk =  manager.getChunkWithPlayer();
+   // }
 
     /*
     public Rectangle getViewport() {

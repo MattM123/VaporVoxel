@@ -19,12 +19,12 @@ import java.util.logging.Logger;
 public class Chunk extends PolygonMeshView implements Serializable {
     private Point3D location;
     public final int CHUNK_BOUNDS = 16;
-    public final int CHUNK_HEIGHT = 320;
+    public static final int CHUNK_HEIGHT = 320;
     private boolean didChange = false;
     private final List<Cube> cubes = new GlueList<>();
     private final int[][] heightMap = new int[CHUNK_BOUNDS][CHUNK_BOUNDS];
-    private final List<Cube> heightMapPointList = new GlueList<>();
-    private final long seed = 1234567890;
+    public final List<Cube> heightMapPointList = new GlueList<>();
+    private static final long seed = 1234567890;
     private final TextureAtlas textures;
     private static final Logger logger = Logger.getLogger("Chunk.class");
 
@@ -117,8 +117,7 @@ public class Chunk extends PolygonMeshView implements Serializable {
     }
 
     /**
-     * Initializes a chunk at a given point. Populates a chunk heightmapped points
-     * The number of cubes is calculated: CHUNK_BOUNDS x CHUNK_BOUNDS x CHUNK_HEIGHT
+     * Initializes a chunk at a given point and populates it's heightmap using Simplex noise
      * @param x coordinate of top left chunk corner
      * @param y coordinate of top left chunk corner
      * @param z coordinate of top left chunk corner
@@ -141,7 +140,7 @@ public class Chunk extends PolygonMeshView implements Serializable {
 
                 heightMap[xCount][yCount] = elevation;
                 Cube c = new Cube(x1, y1, elevation);
-                c.setType(BlockType.DEFAULT);
+                c.setType(BlockType.GRASS);
                 heightMapPointList.add(c);
 
                 yCount++;
@@ -186,7 +185,7 @@ public class Chunk extends PolygonMeshView implements Serializable {
 
     /**
      * Generates chunk mesh based on height-mapped and interpolated points on initial chunk creation
-     * Also removes and adds points to mesh based on player actions post-chunk creation.
+     * Also removes and adds points to mesh based on player actions post-initialization.
      */
     public void updateMesh() {
         Thread t = new Thread(() -> {
@@ -207,16 +206,23 @@ public class Chunk extends PolygonMeshView implements Serializable {
          ================================================*/
                 TextureRegion grass_top = textures.getRegion("grass_top");
                 TextureRegion grass_side = textures.getRegion("grass_side");
+                TextureRegion dirt = textures.getRegion("dirt");
                 float[] texCoords = {
                         (float) grass_top.getTextureCoordinates(0, 0)[0], (float) grass_top.getTextureCoordinates(0, 0)[1],
-                        (float) grass_top.getTextureCoordinates(0, 256)[0], (float) grass_top.getTextureCoordinates(0, 256)[1],
-                        (float) grass_top.getTextureCoordinates(256, 256)[0], (float) grass_top.getTextureCoordinates(256, 256)[1],
                         (float) grass_top.getTextureCoordinates(256, 0)[0], (float) grass_top.getTextureCoordinates(256, 0)[1],
+                        (float) grass_top.getTextureCoordinates(256, 256)[0], (float) grass_top.getTextureCoordinates(256, 256)[1],
+                        (float) grass_top.getTextureCoordinates(0, 256)[0], (float) grass_top.getTextureCoordinates(0, 256)[1],
+
 
                         (float) grass_side.getTextureCoordinates(0, 0)[0], (float) grass_side.getTextureCoordinates(0, 0)[1],
-                        (float) grass_side.getTextureCoordinates(0, 256)[0], (float) grass_side.getTextureCoordinates(0, 256)[1],
-                        (float) grass_side.getTextureCoordinates(256, 256)[0], (float) grass_side.getTextureCoordinates(256, 256)[1],
                         (float) grass_side.getTextureCoordinates(256, 0)[0], (float) grass_side.getTextureCoordinates(256, 0)[1],
+                        (float) grass_side.getTextureCoordinates(256, 256)[0], (float) grass_side.getTextureCoordinates(256, 256)[1],
+                        (float) grass_side.getTextureCoordinates(0, 256)[0], (float) grass_side.getTextureCoordinates(0, 256)[1],
+
+                        (float) dirt.getTextureCoordinates(0, 0)[0], (float) dirt.getTextureCoordinates(0, 0)[1],
+                        (float) dirt.getTextureCoordinates(256, 0)[0], (float) dirt.getTextureCoordinates(256, 0)[1],
+                        (float) dirt.getTextureCoordinates(256, 256)[0], (float) dirt.getTextureCoordinates(256, 256)[1],
+                        (float) dirt.getTextureCoordinates(0, 256)[0], (float) dirt.getTextureCoordinates(0, 256)[1],
 
                 };
 
@@ -231,9 +237,6 @@ public class Chunk extends PolygonMeshView implements Serializable {
                             heightMapPointList.add(c);
                     }
                 }
-
-
-
 
         /*===================================
           Rendering Z Axis Faces
@@ -265,7 +268,7 @@ public class Chunk extends PolygonMeshView implements Serializable {
                         p = heightMapPointList.stream().filter(q -> q != null && q.getZ() == finalI).toList();
                     }
                     if (!p.isEmpty()) {
-                        for (Point3D point3D : p) {
+                        for (Cube point3D : p) {
                             int[] face = new int[0];
 
                             //First face point 0
@@ -278,7 +281,11 @@ public class Chunk extends PolygonMeshView implements Serializable {
                                 points = ArrayUtils.add(points, point3D.getZ());
                                 face = ArrayUtils.add(face, points.length / 3 - 1);
                             }
-                            face = ArrayUtils.add(face, 0);
+                            switch (point3D.getType()) {
+                                case GRASS -> face = ArrayUtils.add(face, 0);
+                                case DIRT -> face = ArrayUtils.add(face, 8);
+                            }
+
 
                             //Second face point 1
                             float[] t1 = {point3D.getX(), point3D.getY() - 1, point3D.getZ()};
@@ -290,8 +297,10 @@ public class Chunk extends PolygonMeshView implements Serializable {
                                 points = ArrayUtils.add(points, point3D.getZ());
                                 face = ArrayUtils.add(face, points.length / 3 - 1);
                             }
-                            face = ArrayUtils.add(face, 1);
-
+                            switch (point3D.getType()) {
+                                case GRASS -> face = ArrayUtils.add(face, 1);
+                                case DIRT -> face = ArrayUtils.add(face, 9);
+                            }
 
                             //Third face point 2
                             float[] t2 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ()};
@@ -303,7 +312,10 @@ public class Chunk extends PolygonMeshView implements Serializable {
                                 points = ArrayUtils.add(points, point3D.getZ());
                                 face = ArrayUtils.add(face, points.length / 3 - 1);
                             }
-                            face = ArrayUtils.add(face, 2);
+                            switch (point3D.getType()) {
+                                case GRASS -> face = ArrayUtils.add(face, 2);
+                                case DIRT -> face = ArrayUtils.add(face, 10);
+                            }
 
 
                             //Fourth face point 3
@@ -316,7 +328,10 @@ public class Chunk extends PolygonMeshView implements Serializable {
                                 points = ArrayUtils.add(points, point3D.getZ());
                                 face = ArrayUtils.add(face, points.length / 3 - 1);
                             }
-                            face = ArrayUtils.add(face, 3);
+                            switch (point3D.getType()) {
+                                case GRASS -> face = ArrayUtils.add(face, 3);
+                                case DIRT -> face = ArrayUtils.add(face, 11);
+                            }
                             faces = ArrayUtils.add(faces, face);
                         }
                     }
@@ -385,9 +400,13 @@ public class Chunk extends PolygonMeshView implements Serializable {
                                     face1 = ArrayUtils.add(face1, points.length / 3 - 1);
                                 }
                                 switch (point3D.getType()) {
-                                    case DEFAULT -> {
+                                    case GRASS -> {
                                         face1 = ArrayUtils.add(face1, 4);
                                         face = ArrayUtils.add(face, 4);
+                                    }
+                                    case DIRT -> {
+                                        face1 = ArrayUtils.add(face1, 8);
+                                        face = ArrayUtils.add(face, 8);
                                     }
                                 }
                             }
@@ -414,9 +433,13 @@ public class Chunk extends PolygonMeshView implements Serializable {
                                     face1 = ArrayUtils.add(face1, points.length / 3 - 1);
                                 }
                                 switch (point3D.getType()) {
-                                    case DEFAULT -> {
+                                    case GRASS -> {
                                         face1 = ArrayUtils.add(face1, 5);
                                         face = ArrayUtils.add(face, 5);
+                                    }
+                                    case DIRT -> {
+                                        face1 = ArrayUtils.add(face1, 9);
+                                        face = ArrayUtils.add(face, 9);
                                     }
                                 }
                             }
@@ -444,9 +467,13 @@ public class Chunk extends PolygonMeshView implements Serializable {
                                     face1 = ArrayUtils.add(face1, points.length / 3 - 1);
                                 }
                                 switch (point3D.getType()) {
-                                    case DEFAULT -> {
+                                    case GRASS -> {
                                         face1 = ArrayUtils.add(face1, 6);
                                         face = ArrayUtils.add(face, 6);
+                                    }
+                                    case DIRT -> {
+                                        face1 = ArrayUtils.add(face1, 10);
+                                        face = ArrayUtils.add(face, 10);
                                     }
                                 }
                             }
@@ -473,9 +500,13 @@ public class Chunk extends PolygonMeshView implements Serializable {
                                     face1 = ArrayUtils.add(face1, points.length / 3 - 1);
                                 }
                                 switch (point3D.getType()) {
-                                    case DEFAULT -> {
+                                    case GRASS -> {
                                         face1 = ArrayUtils.add(face1, 7);
                                         face = ArrayUtils.add(face, 7);
+                                    }
+                                    case DIRT -> {
+                                        face1 = ArrayUtils.add(face1, 11);
+                                        face = ArrayUtils.add(face, 11);
                                     }
                                 }
                             }
@@ -523,9 +554,13 @@ public class Chunk extends PolygonMeshView implements Serializable {
                                     face1 = ArrayUtils.add(face1, points.length / 3 - 1);
                                 }
                                 switch (point3D.getType()) {
-                                    case DEFAULT -> {
+                                    case GRASS -> {
                                         face1 = ArrayUtils.add(face1, 4);
                                         face = ArrayUtils.add(face, 4);
+                                    }
+                                    case DIRT -> {
+                                        face1 = ArrayUtils.add(face1, 8);
+                                        face = ArrayUtils.add(face, 8);
                                     }
                                 }
                             }
@@ -553,9 +588,13 @@ public class Chunk extends PolygonMeshView implements Serializable {
                                     face1 = ArrayUtils.add(face1, points.length / 3 - 1);
                                 }
                                 switch (point3D.getType()) {
-                                    case DEFAULT -> {
+                                    case GRASS -> {
                                         face1 = ArrayUtils.add(face1, 5);
                                         face = ArrayUtils.add(face, 5);
+                                    }
+                                    case DIRT -> {
+                                        face1 = ArrayUtils.add(face1, 9);
+                                        face = ArrayUtils.add(face, 9);
                                     }
                                 }
                             }
@@ -583,9 +622,13 @@ public class Chunk extends PolygonMeshView implements Serializable {
                                     face1 = ArrayUtils.add(face1, points.length / 3 - 1);
                                 }
                                 switch (point3D.getType()) {
-                                    case DEFAULT -> {
+                                    case GRASS -> {
                                         face1 = ArrayUtils.add(face1, 6);
                                         face = ArrayUtils.add(face, 6);
+                                    }
+                                    case DIRT -> {
+                                        face1 = ArrayUtils.add(face1, 10);
+                                        face = ArrayUtils.add(face, 10);
                                     }
                                 }
                             }
@@ -612,9 +655,13 @@ public class Chunk extends PolygonMeshView implements Serializable {
                                     face1 = ArrayUtils.add(face1, points.length / 3 - 1);
                                 }
                                 switch (point3D.getType()) {
-                                    case DEFAULT -> {
+                                    case GRASS -> {
                                         face1 = ArrayUtils.add(face1, 7);
                                         face = ArrayUtils.add(face, 7);
+                                    }
+                                    case DIRT -> {
+                                        face1 = ArrayUtils.add(face1, 11);
+                                        face = ArrayUtils.add(face, 11);
                                     }
                                 }
                             }
@@ -699,6 +746,7 @@ public class Chunk extends PolygonMeshView implements Serializable {
                         } else {
                             newCube = new Cube((int) base.getX(), (int) base.getY(), (int) base.getZ() - j);
                         }
+                        newCube.setType(BlockType.DIRT);
 
                         if (!interpolation.contains(newCube))
                             interpolation.add(newCube);
@@ -720,12 +768,12 @@ public class Chunk extends PolygonMeshView implements Serializable {
     }
 
     /**
-     * Retrieves the height-map value for any given x,y column in any chunk
+     * Retrieves the Z value for any given x,y column in any chunk
      * @param x coordinate of column
      * @param y coordinate of column
-     * @return Returns the noise value which can be scaled to get the max elevation of the column height
+     * @return Returns the noise value which is scaled between 0 and CHUNK_HEIGHT
      */
-    private int getGlobalHeightMapValue(int x, int y) {
+    public static int getGlobalHeightMapValue(int x, int y) {
         //Affects height of terrain. A higher value will result in lower, smoother terrain while a lower value will result in
         // a rougher, raised terrain
         float var1 = 12;
@@ -742,7 +790,8 @@ public class Chunk extends PolygonMeshView implements Serializable {
 
     }
     /**
-     * Since the location of each chunk is unique this is used as an identifier for chunk rendering
+     * Since the location of each chunk is unique this is used as an identifier by the chunk
+     * renderer to retrieve and insert chunks
      * @return The bottom left vertex of this chunks mesh view.
      */
     public Point3D getLocation() {
@@ -752,6 +801,6 @@ public class Chunk extends PolygonMeshView implements Serializable {
 
     @Override
     public String toString() {
-        return "(" + location.getX() + "," + location.getY() + ", " + location.getZ() + ")";
+        return "Chunk: (" + location.getX() + "," + location.getY() + ")";
     }
 }

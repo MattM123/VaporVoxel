@@ -1,0 +1,13 @@
+.scroll-pane{
+   -fx-background-color:transparent;
+}
+
+.scroll-pane > .viewport {
+   -fx-background-color: transparent;
+}
+.world-buttons {
+    -fx-min-width: 100px;
+}
+.world-labels {
+    -fx-min-width: 100px;
+}

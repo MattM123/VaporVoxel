@@ -18,18 +18,16 @@ public class ChunkManager extends GlueList<Chunk> implements Serializable {
     private final PointCompare pointCompare = new PointCompare();
 
     public ChunkManager(Player player, Group world) {
-
         Map<String, Image> textureMap = new HashMap<>();
         textureMap.put("grass_top", new Image("/grass_top.png"));
         textureMap.put("grass_side", new Image("/grass_side.png"));
+        textureMap.put("dirt", new Image("/dirt.png"));
         textures = new TextureAtlas((textureMap));
 
         this.player = player;
-        player.setManager(this);
-        add(new Chunk(textures).initialize(0, 0, 0));
-        get(0).updateMesh();
-        updateRender(world);
-
+      //  add(new Chunk(textures).initialize(0, 0, 0));
+      //  get(0).updateMesh();
+       // updateRender(world);
     }
 
     /**
@@ -211,5 +209,9 @@ public class ChunkManager extends GlueList<Chunk> implements Serializable {
         }
         return null;
 
+    }
+
+    public TextureAtlas getTextures() {
+        return textures;
     }
 }

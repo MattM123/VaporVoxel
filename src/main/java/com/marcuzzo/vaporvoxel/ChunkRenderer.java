@@ -150,18 +150,13 @@ public class ChunkRenderer {
         return chunks;
     }
     /**
-     * Returns a list of chunks that should be rendered around a player based on a renderer distance value
+     * Returns a list of chunks that should be rendered around a player based on a render distance value
      * @return The list of chunks that should be rendered
      */
     public List<Chunk> getChunksToRender() {
         List<Chunk> chunks = new ArrayList<>();
-
-        try {
-            chunks.addAll(getQuadrantChunks());
-            chunks.addAll(getCardinalChunks());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        chunks.addAll(getQuadrantChunks());
+        chunks.addAll(getCardinalChunks());
         chunks.add(playerChunk);
 
         return chunks;
