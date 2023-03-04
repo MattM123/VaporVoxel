@@ -15,6 +15,8 @@ module com.marcuzzo.vaporvoxel {
     requires javafxsvg;
     requires java.logging;
     requires batik.transcoder;
+    requires jogl.all;
+    requires org.apache.commons.io;
 
     opens com.marcuzzo.vaporvoxel to javafx.fxml;
     exports com.marcuzzo.vaporvoxel;

@@ -7,6 +7,9 @@ import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.shapes.polygon.PolygonMesh;
 import org.fxyz3d.shapes.polygon.PolygonMeshView;
 
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
@@ -15,18 +18,20 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 public class Chunk extends PolygonMeshView implements Serializable {
     private Point3D location;
-    public final int CHUNK_BOUNDS = 16;
+    public static final int CHUNK_BOUNDS = 16;
     public static final int CHUNK_HEIGHT = 320;
     private boolean didChange = false;
     private final List<Cube> cubes = new GlueList<>();
     private final int[][] heightMap = new int[CHUNK_BOUNDS][CHUNK_BOUNDS];
-    public final List<Cube> heightMapPointList = new GlueList<>();
+    public List<Cube> heightMapPointList = new GlueList<>();
     private static final long seed = 1234567890;
-    private final TextureAtlas textures;
+    public static TextureAtlas textures = null;
     private static final Logger logger = Logger.getLogger("Chunk.class");
+
 
     //private Point3D pickedCube;
 
@@ -139,8 +144,7 @@ public class Chunk extends PolygonMeshView implements Serializable {
                 int elevation = getGlobalHeightMapValue(x1, y1);
 
                 heightMap[xCount][yCount] = elevation;
-                Cube c = new Cube(x1, y1, elevation);
-                c.setType(BlockType.GRASS);
+                Cube c = new Cube(x1, y1, elevation, BlockType.GRASS);
                 heightMapPointList.add(c);
 
                 yCount++;
@@ -195,7 +199,10 @@ public class Chunk extends PolygonMeshView implements Serializable {
                 PhongMaterial mat = new PhongMaterial();
 
                 if (textures != null && mat.getDiffuseMap() != textures.getImage())
-                    mat.setDiffuseMap(textures.getImage());
+                    try {
+                        mat.setDiffuseMap(textures.getImage());
+                    } catch (Exception ignore) {
+                    }
                 else {
                     System.out.println("Null Textures");
                     System.exit(0);
@@ -250,10 +257,10 @@ public class Chunk extends PolygonMeshView implements Serializable {
                     while (count < max) {
                         try {
                             count++;
-                            p = heightMapPointList.stream().filter(q -> q.getZ() == finalI).toList();
+                            p = heightMapPointList.stream().filter(q -> q.myPoint.getZ() == finalI).toList();
                             break;
                         } catch (ConcurrentModificationException e) {
-                            logger.info("CoModificationException on chunk rendering attempt " + count);
+                            logger.info("Failed chunk rendering attempt " + count);
                             try {
                                 Thread.sleep(1);
                             } catch (InterruptedException ex) {
@@ -264,21 +271,21 @@ public class Chunk extends PolygonMeshView implements Serializable {
 
 
                     if (p == null) {
-                        logger.warning("CoModificationException found on all attempts. Chunk may not renderer properly.");
-                        p = heightMapPointList.stream().filter(q -> q != null && q.getZ() == finalI).toList();
+                        logger.warning("Failed all chunk rendering attempts. Chunk may not renderer properly.");
+                        p = heightMapPointList.stream().filter(q -> q != null && q.myPoint.getZ() == finalI).toList();
                     }
                     if (!p.isEmpty()) {
                         for (Cube point3D : p) {
                             int[] face = new int[0];
 
                             //First face point 0
-                            float[] t12 = {point3D.getX(), point3D.getY(), point3D.getZ()};
+                            float[] t12 = {(float) point3D.myPoint.getX(), (float) point3D.myPoint.getY(), (float) point3D.myPoint.getZ()};
                             if (getPointIndex(points, t12) > -1)
                                 face = ArrayUtils.add(face, getPointIndex(points, t12));
                             else {
-                                points = ArrayUtils.add(points, point3D.getX());
-                                points = ArrayUtils.add(points, point3D.getY());
-                                points = ArrayUtils.add(points, point3D.getZ());
+                                points = ArrayUtils.add(points, (float) point3D.myPoint.getX());
+                                points = ArrayUtils.add(points, (float) point3D.myPoint.getY());
+                                points = ArrayUtils.add(points, (float) point3D.myPoint.getZ());
                                 face = ArrayUtils.add(face, points.length / 3 - 1);
                             }
                             switch (point3D.getType()) {
@@ -288,13 +295,13 @@ public class Chunk extends PolygonMeshView implements Serializable {
 
 
                             //Second face point 1
-                            float[] t1 = {point3D.getX(), point3D.getY() - 1, point3D.getZ()};
+                            float[] t1 = {(float) point3D.myPoint.getX(), (float) (point3D.myPoint.getY() - 1), (float) point3D.myPoint.getZ()};
                             if (getPointIndex(points, t1) > -1)
                                 face = ArrayUtils.add(face, getPointIndex(points, t1));
                             else {
-                                points = ArrayUtils.add(points, point3D.getX());
-                                points = ArrayUtils.add(points, point3D.getY() - 1);
-                                points = ArrayUtils.add(points, point3D.getZ());
+                                points = ArrayUtils.add(points, (float) point3D.myPoint.getX());
+                                points = ArrayUtils.add(points, (float) (point3D.myPoint.getY() - 1));
+                                points = ArrayUtils.add(points, (float) point3D.myPoint.getZ());
                                 face = ArrayUtils.add(face, points.length / 3 - 1);
                             }
                             switch (point3D.getType()) {
@@ -303,13 +310,13 @@ public class Chunk extends PolygonMeshView implements Serializable {
                             }
 
                             //Third face point 2
-                            float[] t2 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ()};
+                            float[] t2 = {(float) (point3D.myPoint.getX() - 1), (float) (point3D.myPoint.getY() - 1), (float) point3D.myPoint.getZ()};
                             if (getPointIndex(points, t2) > -1)
                                 face = ArrayUtils.add(face, getPointIndex(points, t2));
                             else {
-                                points = ArrayUtils.add(points, point3D.getX() - 1);
-                                points = ArrayUtils.add(points, point3D.getY() - 1);
-                                points = ArrayUtils.add(points, point3D.getZ());
+                                points = ArrayUtils.add(points, (float) (point3D.myPoint.getX() - 1));
+                                points = ArrayUtils.add(points, (float) (point3D.myPoint.getY() - 1));
+                                points = ArrayUtils.add(points, (float) point3D.myPoint.getZ());
                                 face = ArrayUtils.add(face, points.length / 3 - 1);
                             }
                             switch (point3D.getType()) {
@@ -319,13 +326,13 @@ public class Chunk extends PolygonMeshView implements Serializable {
 
 
                             //Fourth face point 3
-                            float[] t3 = {point3D.getX() - 1, point3D.getY(), point3D.getZ()};
+                            float[] t3 = {(float) (point3D.myPoint.getX() - 1), (float) point3D.myPoint.getY(), (float) point3D.myPoint.getZ()};
                             if (getPointIndex(points, t3) > -1)
                                 face = ArrayUtils.add(face, getPointIndex(points, t3));
                             else {
-                                points = ArrayUtils.add(points, point3D.getX() - 1);
-                                points = ArrayUtils.add(points, point3D.getY());
-                                points = ArrayUtils.add(points, point3D.getZ());
+                                points = ArrayUtils.add(points, (float) (point3D.myPoint.getX() - 1));
+                                points = ArrayUtils.add(points, (float) point3D.myPoint.getY());
+                                points = ArrayUtils.add(points, (float) point3D.myPoint.getZ());
                                 face = ArrayUtils.add(face, points.length / 3 - 1);
                             }
                             switch (point3D.getType()) {
@@ -349,11 +356,11 @@ public class Chunk extends PolygonMeshView implements Serializable {
                     while (count < max) {
                         try {
                             count++;
-                            x = heightMapPointList.stream().filter(q -> q.getX() == (getLocation().getX() + finalI)).toList();
-                            y = heightMapPointList.stream().filter(q -> q.getY() == (getLocation().getY() + finalI)).toList();
+                            x = heightMapPointList.stream().filter(q -> q.myPoint.getX() == (getLocation().getX() + finalI)).toList();
+                            y = heightMapPointList.stream().filter(q -> q.myPoint.getY() == (getLocation().getY() + finalI)).toList();
                             break;
                         } catch (ConcurrentModificationException e) {
-                            logger.info("CoModificationException on chunk rendering attempt " + count);
+                            logger.info("Failed chunk rendering attempt " + count);
                             if (count == max)
                                 e.printStackTrace();
                             try {
@@ -365,8 +372,8 @@ public class Chunk extends PolygonMeshView implements Serializable {
                     }
 
                     if (x == null) {
-                        logger.warning("CoModificationException found on all attempts. Chunk may not renderer properly.");
-                        x = heightMapPointList.stream().filter(q -> q != null && q.getX() == (getLocation().getX() + finalI)).toList();
+                        logger.warning("Failed all chunk rendering attempts. Chunk may not renderer properly.");
+                        x = heightMapPointList.stream().filter(q -> q != null && q.myPoint.getX() == (getLocation().getX() + finalI)).toList();
                     }
                     if (!x.isEmpty()) {
                         for (Cube point3D : x) {
@@ -374,29 +381,29 @@ public class Chunk extends PolygonMeshView implements Serializable {
                             int[] face1 = new int[0];
 
                             //Determines if faces should be added to mesh
-                            int base = (int) point3D.getZ();
-                            int plus1 = getGlobalHeightMapValue((int) point3D.getX() + 1, (int) point3D.getY());
-                            int minus1 = getGlobalHeightMapValue((int) point3D.getX() - 1, (int) point3D.getY());
+                            int base = (int) point3D.myPoint.getZ();
+                            int plus1 = getGlobalHeightMapValue((int) point3D.myPoint.getX() + 1, (int) point3D.myPoint.getY());
+                            int minus1 = getGlobalHeightMapValue((int) point3D.myPoint.getX() - 1, (int) point3D.myPoint.getY());
 
                             //First face set
                             if (plus1 != base || minus1 != base) {
-                                float[] t12 = {point3D.getX(), point3D.getY(), point3D.getZ()};
+                                float[] t12 = {(float) point3D.myPoint.getX(), (float) point3D.myPoint.getY(), (float) point3D.myPoint.getZ()};
                                 if (getPointIndex(points, t12) > -1)
                                     face = ArrayUtils.add(face, getPointIndex(points, t12));
                                 else {
-                                    points = ArrayUtils.add(points, point3D.getX());
-                                    points = ArrayUtils.add(points, point3D.getY());
-                                    points = ArrayUtils.add(points, point3D.getZ());
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getX());
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getY());
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getZ());
                                     face = ArrayUtils.add(face, points.length / 3 - 1);
                                 }
 
-                                float[] w = {point3D.getX() - 1, point3D.getY(), point3D.getZ()};
+                                float[] w = {(float) (point3D.myPoint.getX() - 1), (float) point3D.myPoint.getY(), (float) point3D.myPoint.getZ()};
                                 if (getPointIndex(points, w) > -1)
                                     face1 = ArrayUtils.add(face1, getPointIndex(points, w));
                                 else {
-                                    points = ArrayUtils.add(points, point3D.getX() - 1);
-                                    points = ArrayUtils.add(points, point3D.getY());
-                                    points = ArrayUtils.add(points, point3D.getZ());
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getX() - 1));
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getY());
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getZ());
                                     face1 = ArrayUtils.add(face1, points.length / 3 - 1);
                                 }
                                 switch (point3D.getType()) {
@@ -413,23 +420,23 @@ public class Chunk extends PolygonMeshView implements Serializable {
 
                             //Second face set
                             if (plus1 != base || minus1 != base) {
-                                float[] t1 = {point3D.getX(), point3D.getY() - 1, point3D.getZ()};
+                                float[] t1 = {(float) point3D.myPoint.getX(), (float) (point3D.myPoint.getY() - 1), (float) point3D.myPoint.getZ()};
                                 if (getPointIndex(points, t1) > -1)
                                     face = ArrayUtils.add(face, getPointIndex(points, t1));
                                 else {
-                                    points = ArrayUtils.add(points, point3D.getX());
-                                    points = ArrayUtils.add(points, point3D.getY() - 1);
-                                    points = ArrayUtils.add(points, point3D.getZ());
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getX());
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getY() - 1));
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getZ());
                                     face = ArrayUtils.add(face, points.length / 3 - 1);
                                 }
 
-                                float[] w1 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ()};
+                                float[] w1 = {(float) (point3D.myPoint.getX() - 1), (float) (point3D.myPoint.getY() - 1), (float) point3D.myPoint.getZ()};
                                 if (getPointIndex(points, w1) > -1)
                                     face1 = ArrayUtils.add(face1, getPointIndex(points, w1));
                                 else {
-                                    points = ArrayUtils.add(points, point3D.getX() - 1);
-                                    points = ArrayUtils.add(points, point3D.getY() - 1);
-                                    points = ArrayUtils.add(points, point3D.getZ());
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getX() - 1));
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getY() - 1));
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getZ());
                                     face1 = ArrayUtils.add(face1, points.length / 3 - 1);
                                 }
                                 switch (point3D.getType()) {
@@ -447,23 +454,23 @@ public class Chunk extends PolygonMeshView implements Serializable {
 
                             //Third face set
                             if (plus1 != base || minus1 != base) {
-                                float[] t2 = {point3D.getX(), point3D.getY() - 1, point3D.getZ() - 1};
+                                float[] t2 = {(float) point3D.myPoint.getX(), (float) (point3D.myPoint.getY() - 1), (float) (point3D.myPoint.getZ() - 1)};
                                 if (getPointIndex(points, t2) > -1)
                                     face = ArrayUtils.add(face, getPointIndex(points, t2));
                                 else {
-                                    points = ArrayUtils.add(points, point3D.getX());
-                                    points = ArrayUtils.add(points, point3D.getY() - 1);
-                                    points = ArrayUtils.add(points, point3D.getZ() - 1);
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getX());
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getY() - 1));
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getZ() - 1));
                                     face = ArrayUtils.add(face, points.length / 3 - 1);
                                 }
 
-                                float[] w2 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ() - 1};
+                                float[] w2 = {(float) (point3D.myPoint.getX() - 1), (float) (point3D.myPoint.getY() - 1), (float) (point3D.myPoint.getZ() - 1)};
                                 if (getPointIndex(points, w2) > -1)
                                     face1 = ArrayUtils.add(face1, getPointIndex(points, w2));
                                 else {
-                                    points = ArrayUtils.add(points, point3D.getX() - 1);
-                                    points = ArrayUtils.add(points, point3D.getY() - 1);
-                                    points = ArrayUtils.add(points, point3D.getZ() - 1);
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getX() - 1));
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getY() - 1));
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getZ() - 1));
                                     face1 = ArrayUtils.add(face1, points.length / 3 - 1);
                                 }
                                 switch (point3D.getType()) {
@@ -480,23 +487,23 @@ public class Chunk extends PolygonMeshView implements Serializable {
 
                             //Fourth face set
                             if (plus1 != base || minus1 != base) {
-                                float[] t3 = {point3D.getX(), point3D.getY(), point3D.getZ() - 1};
+                                float[] t3 = {(float) point3D.myPoint.getX(), (float) point3D.myPoint.getY(), (float) (point3D.myPoint.getZ() - 1)};
                                 if (getPointIndex(points, t3) > -1)
                                     face = ArrayUtils.add(face, getPointIndex(points, t3));
                                 else {
-                                    points = ArrayUtils.add(points, point3D.getX());
-                                    points = ArrayUtils.add(points, point3D.getY());
-                                    points = ArrayUtils.add(points, point3D.getZ() - 1);
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getX());
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getY());
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getZ() - 1));
                                     face = ArrayUtils.add(face, points.length / 3 - 1);
                                 }
 
-                                float[] w3 = {point3D.getX() - 1, point3D.getY(), point3D.getZ() - 1};
+                                float[] w3 = {(float) (point3D.myPoint.getX() - 1), (float) point3D.myPoint.getY(), (float) (point3D.myPoint.getZ() - 1)};
                                 if (getPointIndex(points, w3) > -1)
                                     face1 = ArrayUtils.add(face1, getPointIndex(points, w3));
                                 else {
-                                    points = ArrayUtils.add(points, point3D.getX() - 1);
-                                    points = ArrayUtils.add(points, point3D.getY());
-                                    points = ArrayUtils.add(points, point3D.getZ() - 1);
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getX() - 1));
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getY());
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getZ() - 1));
                                     face1 = ArrayUtils.add(face1, points.length / 3 - 1);
                                 }
                                 switch (point3D.getType()) {
@@ -519,8 +526,8 @@ public class Chunk extends PolygonMeshView implements Serializable {
                     }
 
                     if (y == null) {
-                        logger.warning("CoModificationException found on all attempts. Chunk may not renderer properly.");
-                        y = heightMapPointList.stream().filter(q -> q != null && q.getY() == (getLocation().getY() + finalI)).toList();
+                        logger.warning("Failed all chunk rendering attempts. Chunk may not renderer properly.");
+                        y = heightMapPointList.stream().filter(q -> q != null && q.myPoint.getY() == (getLocation().getY() + finalI)).toList();
                     }
                     if (!y.isEmpty()) {
                         for (Cube point3D : y) {
@@ -528,29 +535,29 @@ public class Chunk extends PolygonMeshView implements Serializable {
                             int[] face1 = new int[0];
 
                             //Determines faces should be rendered
-                            double base = point3D.getZ();
-                            double plus1 = getGlobalHeightMapValue((int) point3D.getX(), (int) point3D.getY() + 1);
-                            double minus1 = getGlobalHeightMapValue((int) point3D.getX(), (int) point3D.getY() - 1);
+                            double base = point3D.myPoint.getZ();
+                            double plus1 = getGlobalHeightMapValue((int) point3D.myPoint.getX(), (int) point3D.myPoint.getY() + 1);
+                            double minus1 = getGlobalHeightMapValue((int) point3D.myPoint.getX(), (int) point3D.myPoint.getY() - 1);
 
                             //First face set
                             if (plus1 != base || minus1 != base) {
-                                float[] t12 = {point3D.getX(), point3D.getY(), point3D.getZ()};
+                                float[] t12 = {(float) point3D.myPoint.getX(), (float) point3D.myPoint.getY(), (float) point3D.myPoint.getZ()};
                                 if (getPointIndex(points, t12) > -1)
                                     face = ArrayUtils.add(face, getPointIndex(points, t12));
                                 else {
-                                    points = ArrayUtils.add(points, point3D.getX());
-                                    points = ArrayUtils.add(points, point3D.getY());
-                                    points = ArrayUtils.add(points, point3D.getZ());
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getX());
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getY());
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getZ());
                                     face = ArrayUtils.add(face, points.length / 3 - 1);
                                 }
 
-                                float[] w = {point3D.getX(), point3D.getY() - 1, point3D.getZ()};
+                                float[] w = {(float) point3D.myPoint.getX(), (float) (point3D.myPoint.getY() - 1), (float) point3D.myPoint.getZ()};
                                 if (getPointIndex(points, w) > -1)
                                     face1 = ArrayUtils.add(face1, getPointIndex(points, w));
                                 else {
-                                    points = ArrayUtils.add(points, point3D.getX());
-                                    points = ArrayUtils.add(points, point3D.getY() - 1);
-                                    points = ArrayUtils.add(points, point3D.getZ());
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getX());
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getY() - 1));
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getZ());
                                     face1 = ArrayUtils.add(face1, points.length / 3 - 1);
                                 }
                                 switch (point3D.getType()) {
@@ -568,23 +575,23 @@ public class Chunk extends PolygonMeshView implements Serializable {
 
                             //Second face set
                             if (plus1 != base || minus1 != base) {
-                                float[] t1 = {point3D.getX() - 1, point3D.getY(), point3D.getZ()};
+                                float[] t1 = {(float) (point3D.myPoint.getX() - 1), (float) point3D.myPoint.getY(), (float) point3D.myPoint.getZ()};
                                 if (getPointIndex(points, t1) > -1)
                                     face = ArrayUtils.add(face, getPointIndex(points, t1));
                                 else {
-                                    points = ArrayUtils.add(points, point3D.getX() - 1);
-                                    points = ArrayUtils.add(points, point3D.getY());
-                                    points = ArrayUtils.add(points, point3D.getZ());
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getX() - 1));
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getY());
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getZ());
                                     face = ArrayUtils.add(face, points.length / 3 - 1);
                                 }
 
-                                float[] w1 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ()};
+                                float[] w1 = {(float) (point3D.myPoint.getX() - 1), (float) (point3D.myPoint.getY() - 1), (float) point3D.myPoint.getZ()};
                                 if (getPointIndex(points, w1) > -1)
                                     face1 = ArrayUtils.add(face1, getPointIndex(points, w1));
                                 else {
-                                    points = ArrayUtils.add(points, point3D.getX() - 1);
-                                    points = ArrayUtils.add(points, point3D.getY() - 1);
-                                    points = ArrayUtils.add(points, point3D.getZ());
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getX() - 1));
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getY() - 1));
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getZ());
                                     face1 = ArrayUtils.add(face1, points.length / 3 - 1);
                                 }
                                 switch (point3D.getType()) {
@@ -602,23 +609,23 @@ public class Chunk extends PolygonMeshView implements Serializable {
 
                             //Third face set
                             if (plus1 != base || minus1 != base) {
-                                float[] t2 = {point3D.getX() - 1, point3D.getY(), point3D.getZ() - 1};
+                                float[] t2 = {(float) (point3D.myPoint.getX() - 1), (float) point3D.myPoint.getY(), (float) (point3D.myPoint.getZ() - 1)};
                                 if (getPointIndex(points, t2) > -1)
                                     face = ArrayUtils.add(face, getPointIndex(points, t2));
                                 else {
-                                    points = ArrayUtils.add(points, point3D.getX() - 1);
-                                    points = ArrayUtils.add(points, point3D.getY());
-                                    points = ArrayUtils.add(points, point3D.getZ() - 1);
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getX() - 1));
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getY());
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getZ() - 1));
                                     face = ArrayUtils.add(face, points.length / 3 - 1);
                                 }
 
-                                float[] w2 = {point3D.getX() - 1, point3D.getY() - 1, point3D.getZ() - 1};
+                                float[] w2 = {(float) (point3D.myPoint.getX() - 1), (float) (point3D.myPoint.getY() - 1), (float) (point3D.myPoint.getZ() - 1)};
                                 if (getPointIndex(points, w2) > -1)
                                     face1 = ArrayUtils.add(face1, getPointIndex(points, w2));
                                 else {
-                                    points = ArrayUtils.add(points, point3D.getX() - 1);
-                                    points = ArrayUtils.add(points, point3D.getY() - 1);
-                                    points = ArrayUtils.add(points, point3D.getZ() - 1);
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getX() - 1));
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getY() - 1));
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getZ() - 1));
                                     face1 = ArrayUtils.add(face1, points.length / 3 - 1);
                                 }
                                 switch (point3D.getType()) {
@@ -635,23 +642,23 @@ public class Chunk extends PolygonMeshView implements Serializable {
 
                             //Fourth face set
                             if (plus1 != base || minus1 != base) {
-                                float[] t3 = {point3D.getX(), point3D.getY(), point3D.getZ() - 1};
+                                float[] t3 = {(float) point3D.myPoint.getX(), (float) point3D.myPoint.getY(), (float) (point3D.myPoint.getZ() - 1)};
                                 if (getPointIndex(points, t3) > -1)
                                     face = ArrayUtils.add(face, getPointIndex(points, t3));
                                 else {
-                                    points = ArrayUtils.add(points, point3D.getX());
-                                    points = ArrayUtils.add(points, point3D.getY());
-                                    points = ArrayUtils.add(points, point3D.getZ() - 1);
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getX());
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getY());
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getZ() - 1));
                                     face = ArrayUtils.add(face, points.length / 3 - 1);
                                 }
 
-                                float[] w3 = {point3D.getX(), point3D.getY() - 1, point3D.getZ() - 1};
+                                float[] w3 = {(float) point3D.myPoint.getX(), (float) (point3D.myPoint.getY() - 1), (float) (point3D.myPoint.getZ() - 1)};
                                 if (getPointIndex(points, w3) > -1)
                                     face1 = ArrayUtils.add(face1, getPointIndex(points, w3));
                                 else {
-                                    points = ArrayUtils.add(points, point3D.getX());
-                                    points = ArrayUtils.add(points, point3D.getY() - 1);
-                                    points = ArrayUtils.add(points, point3D.getZ() - 1);
+                                    points = ArrayUtils.add(points, (float) point3D.myPoint.getX());
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getY() - 1));
+                                    points = ArrayUtils.add(points, (float) (point3D.myPoint.getZ() - 1));
                                     face1 = ArrayUtils.add(face1, points.length / 3 - 1);
                                 }
                                 switch (point3D.getType()) {
@@ -681,7 +688,10 @@ public class Chunk extends PolygonMeshView implements Serializable {
 
                 setCullFace(CullFace.NONE);
                 setMaterial(mat);
-                setMesh(mesh);
+                try {
+                    setMesh(mesh);
+                } catch (Exception ignored) {
+                }
 
             }
             didChange = false;
@@ -728,23 +738,23 @@ public class Chunk extends PolygonMeshView implements Serializable {
         for (Cube base : copy) {
             Future<?> f = MainApplication.interpolExecutor.submit(() -> {
                 List<Cube> comparisons = new GlueList<>();
-                comparisons.add(new Cube((int) base.getX() + 1, (int) base.getY(), getGlobalHeightMapValue((int) (base.getX() + 1), (int) base.getY())));
-                comparisons.add(new Cube((int) base.getX(), (int) base.getY() + 1, getGlobalHeightMapValue((int) (base.getX()), (int) base.getY() + 1)));
-                comparisons.add(new Cube((int) base.getX() - 1, (int) base.getY(), getGlobalHeightMapValue((int) (base.getX() - 1), (int) base.getY())));
-                comparisons.add(new Cube((int) base.getX(), (int) base.getY() - 1, getGlobalHeightMapValue((int) (base.getX()), (int) base.getY() - 1)));
+                comparisons.add(new Cube((int) base.myPoint.getX() + 1, (int) base.myPoint.getY(), getGlobalHeightMapValue((int)  base.myPoint.getX() + 1, (int) base.myPoint.getY())));
+                comparisons.add(new Cube((int) base.myPoint.getX(), (int) base.myPoint.getY() + 1, getGlobalHeightMapValue((int)  base.myPoint.getX(), (int) base.myPoint.getY() + 1)));
+                comparisons.add(new Cube((int) base.myPoint.getX() - 1, (int) base.myPoint.getY(), getGlobalHeightMapValue((int)  base.myPoint.getX() - 1, (int) base.myPoint.getY())));
+                comparisons.add(new Cube((int) base.myPoint.getX(), (int) base.myPoint.getY() - 1, getGlobalHeightMapValue((int)  base.myPoint.getX(), (int) base.myPoint.getY() - 1)));
 
                 for (Cube compare : comparisons) {
                     //Get the tallest column and the number of cubes to interpolate
-                    int taller = (int) compare.getZ() - (int) base.getZ();
+                    int taller = (int) compare.myPoint.getZ() - (int) base.myPoint.getZ();
                     int numOfCubes = Math.abs(taller) - 1;
                     boolean compareTaller = taller > 0;
 
                     for (int j = 1; j < numOfCubes + 1; j++) {
                         Cube newCube;
                         if (compareTaller) {
-                            newCube = new Cube((int) compare.getX(), (int) compare.getY(), (int) compare.getZ() - j);
+                            newCube = new Cube((int) compare.myPoint.getX(), (int) compare.myPoint.getY(), (int) compare.myPoint.getZ() - j);
                         } else {
-                            newCube = new Cube((int) base.getX(), (int) base.getY(), (int) base.getZ() - j);
+                            newCube = new Cube((int) base.myPoint.getX(), (int) base.myPoint.getY(), (int) base.myPoint.getZ() - j);
                         }
                         newCube.setType(BlockType.DIRT);
 
@@ -792,13 +802,77 @@ public class Chunk extends PolygonMeshView implements Serializable {
     /**
      * Since the location of each chunk is unique this is used as an identifier by the chunk
      * renderer to retrieve and insert chunks
-     * @return The bottom left vertex of this chunks mesh view.
+     * @return The corner vertex of this chunks mesh view.
      */
     public Point3D getLocation() {
         return location;
     }
 
+    public Region getRegion() {
+        return new Region(
+                (int) (location.getX() - Math.floorMod((int) location.getX(), 512)),
+                (int) (location.getY() - Math.floorMod((int) location.getY(), 512)));
+    }
+    @Serial
+    private void writeObject(ObjectOutputStream o) {
+        try {
+            o.writeObject(heightMapPointList);
+            /*
+            for (Cube c : heightMapPointList) {
+                Future<?> f = MainApplication.executor.submit(() -> {
+                    try {
+                        System.out.println("write to chunk");
+                        o.writeObject(c);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+                try {
+                    f.get();
+                } catch (Exception ignored) {
+                }
+            }
 
+             */
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    @Serial
+    private void readObject(ObjectInputStream o) {
+        if (heightMapPointList != null) {
+       //     FSTObjectInput in = new FSTObjectInput(stream);
+       //     MyClass result = in.readObject(MyClass.class);
+        //    in.close();
+
+            try {
+                Object o1 = o.readObject();
+                Stream.of(o1).toList() .forEach(c -> heightMapPointList.add((Cube) c));
+
+                /*
+                for (int i = 0; i < heightMapPointList.size(); i++) {
+                    Future<?> f = MainApplication.executor.submit(() -> {
+                        try {
+                            System.out.println("read from chunk");
+                            o.readObject();
+                        } catch (IOException | ClassNotFoundException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                    try {
+                        f.get();
+                    } catch (Exception ignored) {
+                    }
+                }
+
+                 */
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
     @Override
     public String toString() {
         return "Chunk: (" + location.getX() + "," + location.getY() + ")";

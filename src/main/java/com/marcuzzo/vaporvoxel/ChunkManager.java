@@ -2,32 +2,25 @@ package com.marcuzzo.vaporvoxel;
 
 import javafx.application.Platform;
 import javafx.scene.Group;
-import javafx.scene.image.Image;
 import org.fxyz3d.geometry.Point3D;
 
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class ChunkManager extends GlueList<Chunk> implements Serializable {
-    private final Player player;
-    public final int RENDER_DISTANCE = 6;
+    public final Player player;
+    public final int RENDER_DISTANCE = RegionManager.RENDER_DISTANCE;
     public static ChunkRenderer renderer;
-    private final TextureAtlas textures;
     private final PointCompare pointCompare = new PointCompare();
+    //private List<Region> rList = new GlueList<>();
 
-    public ChunkManager(Player player, Group world) {
-        Map<String, Image> textureMap = new HashMap<>();
-        textureMap.put("grass_top", new Image("/grass_top.png"));
-        textureMap.put("grass_side", new Image("/grass_side.png"));
-        textureMap.put("dirt", new Image("/dirt.png"));
-        textures = new TextureAtlas((textureMap));
-
+    public ChunkManager(Player player) {
         this.player = player;
-      //  add(new Chunk(textures).initialize(0, 0, 0));
-      //  get(0).updateMesh();
-       // updateRender(world);
+
+     //  add(new Chunk(RegionManager.textures).initialize(
+    //          (int) (player.getBoundsInParent().getCenterX() - (player.getBoundsInParent().getCenterX() % 16)),
+    //           (int) (player.getBoundsInParent().getCenterY() - (player.getBoundsInParent().getCenterY() % 16)), 0));
+       //get(0).updateMesh();
     }
 
     /**
@@ -35,15 +28,19 @@ public class ChunkManager extends GlueList<Chunk> implements Serializable {
      * @return The chunk that the player is in
      */
     public Chunk getChunkWithPlayer() {
-        Chunk c = null;
-        if (renderer != null) {
-            c = getChunkWithLocation(new Point3D(player.getBoundsInParent().getCenterX() - (player.getBoundsInParent().getCenterX() % 16),
-                    player.getBoundsInParent().getCenterY() - (player.getBoundsInParent().getCenterY() % 16), 0));
-        }
-        if (size() == 1) {
-            c = get(0);
-        }
-        return c;
+            Region r = player.playerRegion;
+            Chunk c =  r.getChunkWithLocation(new Point3D(
+                    (player.getBoundsInParent().getCenterX() - (player.getBoundsInParent().getCenterX() % 16)),
+                   (player.getBoundsInParent().getCenterY() - (player.getBoundsInParent().getCenterY() % 16)), 0));
+
+            if (c == null) {
+                Chunk d = new Chunk(RegionManager.textures).initialize(
+                        (int) (player.getBoundsInParent().getCenterX() - (player.getBoundsInParent().getCenterX() % 16)),
+                        (int) (player.getBoundsInParent().getCenterY() - (player.getBoundsInParent().getCenterY() % 16)), 0);
+                player.playerRegion.add(d);
+                return d;
+            }
+            return c;
     }
 
     /**
@@ -64,19 +61,20 @@ public class ChunkManager extends GlueList<Chunk> implements Serializable {
      * @param world The object that the chunks should be added to/removed from
      */
     public void updateRender(Group world) {
-        if (getChunkWithPlayer() != null) {
-
-            renderer = new ChunkRenderer(RENDER_DISTANCE, getChunkWithPlayer().CHUNK_BOUNDS,
-                    getChunkWithPlayer(), this);
+        if (player.playerRegion != null) {
+            renderer = new ChunkRenderer(RENDER_DISTANCE, Chunk.CHUNK_BOUNDS,
+                    player.playerRegion.getChunkWithPlayer(), player);
 
             List<Chunk> cList = renderer.getChunksToRender();
 
             //Spawn chunk 0,0,0 rendering and de-rendering
-            if (!world.getChildren().contains(get(0)))
-                world.getChildren().add(get(0));
-            if (world.getChildren().contains(get(0)) && !cList.contains(get(0))) {
-                world.getChildren().remove(get(0));
-            }
+             Platform.runLater(() -> {
+                 if (!world.getChildren().contains(get(0)))
+                     world.getChildren().add(get(0));
+                 if (world.getChildren().contains(get(0)) && !cList.contains(get(0))) {
+                     world.getChildren().remove(get(0));
+                  }
+              });
 
             //Removes chunks no longer in render distance
             for (javafx.scene.Node chunk : world.getChildren()) {
@@ -95,6 +93,41 @@ public class ChunkManager extends GlueList<Chunk> implements Serializable {
                     }
               });
             }
+
+            /*
+                //Gets regions that are within render distance
+                for (Chunk c : cList) {
+                    MainApplication.executor.execute(() -> {
+                        if (!rList.contains(c.getRegion()))
+                            rList.add(c.getRegion());
+                    });
+                }
+
+
+
+                //Updates regions to render
+                List<Region> visible = RegionManager.visibleRegions;
+                if (visible.size() > 0) {
+                    if (rList.isEmpty()) {
+                        rList.addAll(RegionManager.getSpawnRegions());
+                    }
+
+                    Platform.runLater(() -> {
+                        //First leave regions no longer in render distance
+                        for (Region r : visible) {
+                            if (!rList.contains(r))
+                                RegionManager.leaveRegion(r);
+                        }
+                        System.out.println(rList.toString());
+                        //Then enter new regions within render distances
+                        for (Region r : rList) {
+                            if (!visible.contains(r))
+                                RegionManager.enterRegion(r);
+                        }
+                    });
+                }
+
+             */
         }
     }
 
@@ -108,41 +141,45 @@ public class ChunkManager extends GlueList<Chunk> implements Serializable {
      */
     public Chunk binaryInsertChunkWithLocation(int l, int r, Point3D c) {
 
+        if (this.isEmpty()) {
+            Chunk q = new Chunk(RegionManager.textures).initialize((int) c.getX(), (int) c.getY(), (int) c.getZ());
+            this.add(q);
+        }
         if (this.size() == 1) {
             //Inserts element as first in list
             if (pointCompare.compare(c, this.get(0).getLocation()) < 0) {
-                Chunk q = new Chunk(textures).initialize((int) c.getX(), (int) c.getY(), (int) c.getZ());
+                Chunk q = new Chunk(RegionManager.textures).initialize((int) c.getX(), (int) c.getY(), (int) c.getZ());
                 this.add(0, q);
                 return q;
             }
             //Appends to end of list
             if (pointCompare.compare(c, this.get(0).getLocation()) > 0) {
-                Chunk q = new Chunk(textures).initialize((int) c.getX(), (int) c.getY(), (int) c.getZ());
+                Chunk q = new Chunk(RegionManager.textures).initialize((int) c.getX(), (int) c.getY(), (int) c.getZ());
                 this.add(q);
                 return q;
             }
         }
 
-        if (r >= l) {
+        if (r >= l && this.size > 1) {
             int mid = l + (r - l) / 2;
             //When an index has been found, right and left will be very close to each other
             //Insertion of the right index will shift the right element
             //and all subsequent ones to the right.
             if (Math.abs(r - l) == 1) {
-                Chunk q = new Chunk(textures).initialize((int) c.getX(), (int) c.getY(), (int) c.getZ());
+                Chunk q = new Chunk(RegionManager.textures).initialize((int) c.getX(), (int) c.getY(), (int) c.getZ());
                 this.add(r, q);
                 return q;
             }
 
             //If element is less than first element
             if (pointCompare.compare(c, this.get(0).getLocation()) < 0) {
-                Chunk q = new Chunk(textures).initialize((int) c.getX(), (int) c.getY(), (int) c.getZ());
+                Chunk q = new Chunk(RegionManager.textures).initialize((int) c.getX(), (int) c.getY(), (int) c.getZ());
                 this.add(0, q);
                 return q;
             }
             //If element is more than last element
             if (pointCompare.compare(c, this.get(this.size - 1).getLocation()) > 0) {
-                Chunk q = new Chunk(textures).initialize((int) c.getX(), (int) c.getY(), (int) c.getZ());
+                Chunk q = new Chunk(RegionManager.textures).initialize((int) c.getX(), (int) c.getY(), (int) c.getZ());
                 this.add(q);
                 return q;
             }
@@ -150,13 +187,13 @@ public class ChunkManager extends GlueList<Chunk> implements Serializable {
             // If the index is near the middle
             if (pointCompare.compare(c, this.get(mid - 1).getLocation()) > 0
                     && pointCompare.compare(c, this.get(mid).getLocation()) < 0) {
-                Chunk q = new Chunk(textures).initialize((int) c.getX(), (int) c.getY(), (int) c.getZ());
+                Chunk q = new Chunk(RegionManager.textures).initialize((int) c.getX(), (int) c.getY(), (int) c.getZ());
                 this.add(mid, q);
                 return q;
             }
             if (pointCompare.compare(c, this.get(mid + 1).getLocation()) < 0
                     && pointCompare.compare(c, this.get(mid).getLocation()) > 0) {
-                Chunk q = new Chunk(textures).initialize((int) c.getX(), (int) c.getY(), (int) c.getZ());
+                Chunk q = new Chunk(RegionManager.textures).initialize((int) c.getX(), (int) c.getY(), (int) c.getZ());
                 this.add(mid + 1, q);
                 return q;
             }
@@ -173,6 +210,7 @@ public class ChunkManager extends GlueList<Chunk> implements Serializable {
 
         }
         else {
+            System.out.println("left: " + l + ", Right: " + r + ", " + c);
             return null;
         }
 
@@ -209,9 +247,5 @@ public class ChunkManager extends GlueList<Chunk> implements Serializable {
         }
         return null;
 
-    }
-
-    public TextureAtlas getTextures() {
-        return textures;
     }
 }

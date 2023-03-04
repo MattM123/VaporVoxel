@@ -1,6 +1,7 @@
 package com.marcuzzo.vaporvoxel;
 import org.fxyz3d.geometry.Point3D;
 
+import java.io.Serializable;
 import java.util.Comparator;
 
 /**
@@ -8,7 +9,7 @@ import java.util.Comparator;
  * this object is used to compare chunks to be sorted for use with
  * binary search algorithms.
  */
-public class PointCompare implements Comparator<Point3D> {
+public class PointCompare implements Comparator<Point3D>, Serializable {
     @Override
     public int compare(Point3D a, Point3D b) {
         if (a.getX() < b.getX()) {

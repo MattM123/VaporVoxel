@@ -31,6 +31,7 @@ import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.Duration;
+import org.apache.commons.io.FileUtils;
 
 import java.awt.*;
 import java.io.File;
@@ -110,19 +111,20 @@ public class MainApplication extends Application {
 
                     delete.setOnAction(a -> {
                         try {
-                            Files.deleteIfExists(Paths.get(root + "worlds/" + c.getFileName().toString()));
+                            FileUtils.deleteDirectory(Paths.get(root + "worlds/" + c.getFileName().toString()).toFile());
                             worldList.getChildren().remove(bar);
                             cumHeight.updateAndGet(v -> v - bar.getMinHeight());
                             worldListBox.setMinHeight(cumHeight.get());
                             worldList.setMinHeight(cumHeight.get());
                         } catch (IOException e) {
                             Logger.getLogger("Logger").warning(e.getMessage());
+                            e.printStackTrace();
                         }
                     });
 
                     load.setOnAction(a -> {
                         currentWorld = new RegionManager(testCamera, Paths.get(root + "worlds/" + c.getFileName()), world);
-                        testCamera.fireEvent(new ChunkTransitionEvent(PlayerEvent.CHUNK_TRANSITION));
+                        testCamera.fireEvent(new RegionTransitionEvent(PlayerEvent.REGION_TRANSITION));
                         base2D.getChildren().remove(scrollableWorldListPane);
                     });
                 });
@@ -179,6 +181,12 @@ public class MainApplication extends Application {
             public void handle(long now) {
                 if (testCamera != null) {
                     gc2D.clearRect(10, 0, 1000, 100);
+                    String currentRegion = "Current Region:";
+                    if (currentWorld != null) {
+                        currentRegion = "Current Region: (" + testCamera.playerRegion.regionBounds.getX() + ", "
+                                + testCamera.playerRegion.regionBounds.getY() + ")";
+                    }
+
                     String position = String.format("Current Position: ( %.3f, %.3f, %.3f)", testCamera.getBoundsInParent().getCenterX(),
                             testCamera.getBoundsInParent().getCenterY(), testCamera.getBoundsInParent().getCenterZ());
                     String chunkPos = "Current Chunk: " + testCamera.playerChunk;
@@ -200,6 +208,7 @@ public class MainApplication extends Application {
                     gc2D.fillText(framerate, 10, 15);
                     gc2D.fillText(position, 10, 30);
                     gc2D.fillText(chunkPos, 10, 45);
+                    gc2D.fillText(currentRegion, 10, 60);
                 }
             }
         };
@@ -245,6 +254,13 @@ public class MainApplication extends Application {
             worldList.setMaxWidth(wid);
             scrollableWorldListPane.setPrefSize(wid, stage.getHeight() / 4);
             worldMenu.setMinWidth(effectiveScreenArea.width / 4.0);
+
+            scene.widthProperty().subtract(scene.widthProperty().get());
+          //  System.out.println(scene.widthProperty().get());
+            scene.widthProperty().add(stage.widthProperty().get());
+
+         //   System.out.println("scene: " + scene.getWidth());
+         //   System.out.println("stage: " + stage.getWidth());
         });
         stage.heightProperty().addListener((observable, oldValue, newValue) -> {
             base2D.setPrefSize(stage.getWidth(), stage.getHeight());
@@ -253,6 +269,14 @@ public class MainApplication extends Application {
             worldList.setMaxWidth(wid);
             scrollableWorldListPane.setPrefSize(wid, stage.getHeight() / 4);
             worldMenu.setMinWidth(effectiveScreenArea.width / 4.0);
+
+            scene.heightProperty().subtract(scene.heightProperty().get());
+         //   System.out.println(scene.heightProperty().get());
+            scene.heightProperty().add(stage.heightProperty().get());
+
+          //  System.out.println("scene: " + scene.getHeight());
+         //   System.out.println("Stage: " + stage.getHeight());
+
         });
 
         TextField worldName = new TextField();
@@ -263,7 +287,7 @@ public class MainApplication extends Application {
         worldMenu.getChildren().addAll(worldName, seed, create);
         create.setOnAction(a -> {
             try {
-                Files.createDirectories(Path.of(root + "worlds/" + worldName.getText()));
+                Files.createDirectories(Path.of(root + "worlds/" + worldName.getText() + "/regions"));
                 worldList.getChildren().remove(1, worldList.getChildren().size());
                 reloadWorlds(worldList, worldListBox, base2D, scrollableWorldListPane);
             } catch (FileAlreadyExistsException e) {
@@ -286,8 +310,6 @@ public class MainApplication extends Application {
         stage.setTitle("TestFrame");
         stage.setScene(scene);
         stage.show();
-
-
 
         AtomicBoolean pressed = new AtomicBoolean(false);
         scene.setOnMouseEntered((MouseEvent event) -> {
@@ -352,15 +374,17 @@ public class MainApplication extends Application {
          and false on key released events. This timer and boolean binding are responsible for
          doing testCamera movements at the same time for concurrent key presses.
          */
+
         AnimationTimer timer = new AnimationTimer() {
             @Override
             public void handle(long timestamp) {
                 if (currentWorld != null) {
-                    if (currentWorld.getRegionWithPlayer().getChunkWithPlayer() != testCamera.playerChunk)
+                    if (testCamera.playerRegion.getChunkWithPlayer() != testCamera.playerChunk)
                         testCamera.fireEvent(new ChunkTransitionEvent(PlayerEvent.CHUNK_TRANSITION));
 
-                    if (currentWorld.getRegionWithPlayer() != testCamera.playerRegion)
-                        testCamera.fireEvent(new RegionTransitionEvent(PlayerEvent.REGION_TRANSITION));
+                    if (RegionManager.getRegionWithPlayer() != testCamera.playerRegion)
+                       testCamera.fireEvent(new RegionTransitionEvent(PlayerEvent.REGION_TRANSITION));
+
 
                     if (!pause) {
                         if (w.get()) {

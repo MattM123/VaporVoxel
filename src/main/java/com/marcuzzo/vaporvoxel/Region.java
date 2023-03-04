@@ -1,19 +1,16 @@
 package com.marcuzzo.vaporvoxel;
 
 import javafx.scene.Group;
-import javafx.scene.image.Image;
 
 import java.awt.*;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.stream.Stream;
 
 public class Region extends ChunkManager implements Serializable {
-    private final int REGION_SIZE = 1024;
-    //private final Point2D location;
     public Rectangle regionBounds;
-    //private final TextureAtlas textures;
-    private final Group world;
 
     /**
      * An object representing a 32x32 chunk area, 1024 chunks in total managed by a chunk manager.
@@ -21,25 +18,76 @@ public class Region extends ChunkManager implements Serializable {
      * @param y coordinate of the corner of this region
      */
     public Region(int x, int y) {
-        super(MainApplication.currentWorld.player, MainApplication.currentWorld.worldGroup);
-        this.world = MainApplication.currentWorld.worldGroup;
-       // this.location = new Point2D(x, y);
+        super(MainApplication.testCamera);
+        Group world = RegionManager.worldGroup;
         regionBounds = new Rectangle(x, y, 512, 512);
 
-        Map<String, javafx.scene.image.Image> textureMap = new HashMap<>();
-        textureMap.put("grass_top", new javafx.scene.image.Image("/grass_top.png"));
-        textureMap.put("grass_side", new javafx.scene.image.Image("/grass_side.png"));
-        textureMap.put("dirt", new Image("/dirt.png"));
-        TextureAtlas textures = new TextureAtlas(textureMap);
-
-        if (x == 0 && y == 0 && this.size() == 0) {
-            System.out.println("t");
-            add(new Chunk(super.getTextures()).initialize(0, 0, 0));
-            get(0).updateMesh();
+        if (RegionManager.getRegionCoordsWithPlayer().getX() == x && RegionManager.getRegionCoordsWithPlayer().getY() == y) {
+            add(getChunkWithPlayer());
             updateRender(world);
         }
     }
 
+    @Serial
+    private void writeObject(ObjectOutputStream o) {
+        try {
+            o.writeObject(this);
+            /*
+            for (Chunk c : this) {
+                Future<?> f = MainApplication.executor.submit(() -> {
+                    try {
+                        System.out.println("write to region");
+                        o.writeObject(c);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+                try {
+                    f.get();
+                } catch (Exception ignored) {
+                }
+            }
+
+             */
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Serial
+    private void readObject(ObjectInputStream o) {
+        try {
+            Object o1 = o.readObject();
+            Stream.of(o1).forEach(c -> this.add((Chunk) c));
+            /*
+            for (int i = 0; i < this.size; i++) {
+                Future<?> f = MainApplication.executor.submit(() -> {
+                    try {
+                        System.out.println("read from region");
+                        o.readObject();
+                    } catch (IOException | ClassNotFoundException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+                try {
+                    f.get();
+                } catch (Exception ignored) {
+                }
+            }
+
+             */
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof Region r) {
+            return this.regionBounds.x == r.regionBounds.x && this.regionBounds.y == r.regionBounds.y;
+        }
+        return false;
+    }
     @Override
     public String toString() {
         return "Region: (" + regionBounds.getX() + ", " + regionBounds.getY() + ")";

@@ -1,19 +1,19 @@
 package com.marcuzzo.vaporvoxel;
 
-import org.fxyz3d.geometry.Point3D;
+import java.io.Serializable;
 
-public class Cube extends Point3D {
-    private final boolean isActive;
+public class Cube extends Point3DByComposition implements Serializable {
     private BlockType type;
+    public double f;
+
     public Cube(int x, int y, int z) {
         super(x, y, z);
-        isActive = false;
+    }
+    public Cube(int x, int y, int z, BlockType b) {
+        super(x, y, z);
+        type = b;
     }
 
-    //public boolean isActive(){
-    //    return isActive;
-   // }
-    //public void setActive(boolean b) { isActive = b; }
     public BlockType getType() {
         return type;
     }
@@ -24,7 +24,8 @@ public class Cube extends Point3D {
     @Override
     public boolean equals(Object o) {
         if (o instanceof Cube) {
-            return this.getX() == ((Cube) o).getX() && this.getY() == ((Cube) o).getY() && this.getZ() == ((Cube) o).getZ();
+            return this.myPoint.getX() == ((Cube) o).myPoint.getX() && this.myPoint.getY() == ((Cube) o).myPoint.getY()
+                    && this.myPoint.getZ() == ((Cube) o).myPoint.getZ();
         } else
             return false;
     }

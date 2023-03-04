@@ -1,58 +1,38 @@
 package com.marcuzzo.vaporvoxel;
 
 import com.marcuzzo.vaporvoxel.EventTypes.PlayerEvent;
+import com.marcuzzo.vaporvoxel.Events.RegionTransitionEvent;
 import javafx.application.Platform;
 import javafx.scene.Group;
 import javafx.scene.PerspectiveCamera;
 
-public class Player extends PerspectiveCamera {
+import java.io.Serializable;
+
+public class Player extends PerspectiveCamera implements Serializable {
     public Chunk playerChunk;
     public Region playerRegion;
 
+
     public Player(boolean b, Group world) {
         super(b);
-        addEventHandler(PlayerEvent.CHUNK_TRANSITION, transitionEvent ->
-                playerRegion = MainApplication.currentWorld.getRegionWithPlayer());
+        addEventHandler(PlayerEvent.REGION_TRANSITION, transitionEvent -> {
+            playerRegion = RegionManager.getRegionWithPlayer();
+
+            //Calculates new regions to render or re-render
+            MainApplication.currentWorld.updateRender();
+
+        });
 
         addEventHandler(PlayerEvent.CHUNK_TRANSITION, transitionEvent -> {
-            playerChunk = MainApplication.currentWorld.getRegionWithPlayer().getChunkWithPlayer();
+            if (playerRegion != RegionManager.getRegionWithPlayer())
+                this.fireEvent(new RegionTransitionEvent(PlayerEvent.REGION_TRANSITION));
+
+       //     System.out.println(playerRegion.getChunkWithPlayer() + " Fffchunk");
+        //    System.out.println(playerRegion + " Fffreg");
+            playerChunk = playerRegion.getChunkWithPlayer();
 
             //Calculates new chunks to render or re-render
-            Platform.runLater(() -> MainApplication.currentWorld.getRegionWithPlayer().updateRender(world));
+            Platform.runLater(() -> playerRegion.updateRender(world));
         });
     }
-
-  //  public void setManager(ChunkManager manager) {
-    //    this.playerChunk =  manager.getChunkWithPlayer();
-   // }
-
-    /*
-    public Rectangle getViewport() {
-        double z = getBoundsInParent().getCenterZ();
-        double w = world.getScene().getWidth();
-        double h = world.getScene().getHeight();
-        double f = getFieldOfView();
-
-        Rectangle r = new Rectangle(-z * (w/h) * Math.tan(f/2), -z * Math.tan(f/2));
-        r.setX(getBoundsInLocal().getMinX());
-        r.setY(getBoundsInLocal().getMinY());
-        r.setFill(Color.GREEN);
-        r.setCursor(Cursor.CROSSHAIR);
-        System.out.println("W: " + r.getWidth() + " H: " + r.getHeight());
-        return r;
-
-        /*
-        So, in summary, the bounds of the scene extend from
-
-        (-z (w/h) tan(f/2), -z tan(f/2))
-           in the top left, to
-
-        (w + z (w/h) tan(f/2), h + z tan(f/2))
-        in the bottom right, where z is the z-coordinate, w the width of the scene,
-        h the height of the scene, and f the (vertical) angle of the field of view.
-         */
-   // }
-
-
-
 }

@@ -5,12 +5,13 @@ import javafx.scene.image.PixelReader;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.OptionalDouble;
 
-public class TextureAtlas {
+public class TextureAtlas implements Serializable {
 
     private final Image image;
 
